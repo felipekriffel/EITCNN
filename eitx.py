@@ -244,8 +244,8 @@ class DirectProblem:
 
     for k in range(l):
       b = np.block([np.zeros(self.N,dtype=PETSc.ScalarType),I_all[k]])
-      # u_nest = sp.sparse.linalg.spsolve(self.A_op,self.A_np.T.conj()@b) #Solve A^*Au = b
-      u_nest, err_code = sp.sparse.linalg.cg(self.A_op,self.A_np.T.conj()@b,rtol=self.rtol) #Solve A^*Au = b
+      u_nest = sp.sparse.linalg.spsolve(self.A_op,self.A_np.T.conj()@b) #Solve A^*Au = b
+      # u_nest, err_code = sp.sparse.linalg.cg(self.A_op,self.A_np.T.conj()@b,rtol=self.rtol) #Solve A^*Au = b
       
       u_array, U_array = u_nest[:self.N], u_nest[self.N:] #splitting array
 
@@ -290,8 +290,8 @@ class DirectProblem:
     U_list = []
 
     for b in vector_list:
-      # u_nest = sp.sparse.linalg.spsolve(self.A_op,self.A_np.T.conj()@b) #Solve A^*Au = b
-      u_nest, err_code = sp.sparse.linalg.cg(self.A_op,self.A_np.T.conj()@b,rtol=self.rtol) #Solve A^*Au = b
+      u_nest = sp.sparse.linalg.spsolve(self.A_op,self.A_np.T.conj()@b) #Solve A^*Au = b
+      # u_nest, err_code = sp.sparse.linalg.cg(self.A_op,self.A_np.T.conj()@b,rtol=self.rtol) #Solve A^*Au = b
       
       u_array, U_array = u_nest[:self.N], u_nest[self.N:] #splitting array
 
@@ -975,10 +975,6 @@ def genGammaImg(gamma,mesh_x,mesh_y,bg):
   circle_points_index = gamma_locator(array_points.T)
   circle_array_points = array_points[circle_points_index]
   bb_tree = dolfinx.geometry.bb_tree(mesh, mesh.topology.dim)
-  # points = np.array([
-  #     (0,0,0),
-  #     (0.3,0.3,0)
-  # ])
   cell_candidates = dolfinx.geometry.compute_collisions_points(bb_tree, circle_array_points)
   colliding_cells = dolfinx.geometry.compute_colliding_cells(mesh, cell_candidates, circle_array_points)
   for i, point in enumerate(circle_array_points):
@@ -993,4 +989,25 @@ def genGammaImg(gamma,mesh_x,mesh_y,bg):
   gamma_array[circle_points_index] = gamma_values.ravel()
   gamma_matrix = np.reshape(gamma_array,(N,N))
   return np.where(gamma_matrix!=bg,1,0)
-  return gamma_matrix
+
+def genPotentialImg(u,mesh_x,mesh_y,bg):
+  cells = []
+  N = mesh_x.shape[0]
+  mesh = u.function_space.mesh
+  array_points = np.stack([mesh_y.ravel(),mesh_x.ravel(),np.zeros(N**2)],axis=1)
+  u_locator = getGammaCircleLocator(1,0,0)
+  circle_points_index = u_locator(array_points.T)
+  circle_array_points = array_points[circle_points_index]
+  bb_tree = dolfinx.geometry.bb_tree(mesh, mesh.topology.dim)
+  cell_candidates = dolfinx.geometry.compute_collisions_points(bb_tree, circle_array_points)
+  colliding_cells = dolfinx.geometry.compute_colliding_cells(mesh, cell_candidates, circle_array_points)
+  for i, point in enumerate(circle_array_points):
+      if len(colliding_cells.links(i)) > 0:
+          cells.append(colliding_cells.links(i)[0])
+          
+  u_values = u.eval(circle_array_points, cells)
+  u_array = np.full(N**2,0.0,dtype=np.float64)
+  u_array[circle_points_index] = u_values.ravel()
+  u_matrix = np.reshape(u_array,(N,N))
+  return u_matrix
+
