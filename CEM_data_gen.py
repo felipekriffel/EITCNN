@@ -2,9 +2,16 @@ import eitx
 import scipy as sp
 import numpy as np
 import dolfinx
+import json
 from matplotlib import pyplot as plt
 
+SETTINGS_PATH = "data_gen_settings.json"
+
+with open(SETTINGS_PATH) as f:
+    settings = json.loads(f.read())
+
 "Importing modules"
+
 import logging
 # Set the logging level to suppress most logs
 logging.getLogger('UFL_LEGACY').setLevel(logging.WARNING)
@@ -53,7 +60,7 @@ V = dir_problem.V     # Continuous Garlekin space function
 # eitx.plot_mesh(mesh)
 
 #"Define gamma as constant = Background"
-iv, bg= 10, 1
+iv, bg= settings['iv'], settings['bg']
 gamma0 = dolfinx.fem.Function(V0)
 gamma0.x.array[:] = bg
 
@@ -69,7 +76,7 @@ list_U0 = np.array(list_U0_m).flatten()
 #print(np.matrix(np.round(list_U0_m, 3)))
 'Retangular Mesh'
 
-N = 128                               # grid with N*N points (works well with 0 < N < 400)
+N = settings["N"]                               # grid with N*N points (works well with 0 < N < 400)
 h = 2*radius/(N-1)                    # step size
 x = [radius - i*h for i in range(N)]  # x grid points
 y = [-radius + i*h for i in range(N)] # y grid points
@@ -86,8 +93,8 @@ T1 = []                               # To save data
 
 # Loop for generating data
 
-n_samples = [1200]               # number of samples in order: 1 circle, 2 circles, 3 circles, etc.
-noise_level = 0.0                   # % of artificial noise in data
+n_samples = settings["n_samples"]               # number of samples in order: 1 circle, 2 circles, 3 circles, etc.
+noise_level = settings["noise_level"]                   # % of artificial noise in data
 
 nn_samples = len(n_samples)
 multi = 4                        # number of samples is multiplied by this number
@@ -184,7 +191,8 @@ for m in range(nn_samples):
     T[l+1] = mesh_y
     T[l+2] = A
     T1.append(T)
+    np.save(f"DATAGEN/sample_{m+1}_{sample}",T)
   print('Generation of ' + str(m + 1) + ' circle(s) ended.')
-np.save('EIT_Data_for_CNN', T1)
-print('Data saved at file named: EIT_Data_for_CNN.')
+# np.save('EIT_Data_for_CNN', T1)
+print('Data saved at DATAGEN.')
 print(np.array(T1).shape)

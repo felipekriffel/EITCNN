@@ -4,10 +4,21 @@ import math
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
+import json
+import os
 
-T1 = np.load('EIT_Data_for_CNN.npy')
+SETTINGS_PATH = "unet_train_settings.json"
 
-per = 0.9                               # percentage used in training
+with open(SETTINGS_PATH) as f:
+    settings = json.loads(f.read())
+
+# T1 = np.load('EIT_Data_for_CNN.npy')
+DATAPATH = "DATAGEN"
+T1 = []
+for file in os.listdir(DATAPATH):
+  T1.append(np.load(DATAPATH+"/"+file))
+
+per = settings['split_percentage']                               # percentage used in training
 
 n_samples = np.array(T1).shape[0]
 n_g = np.array(T1).shape[1] - 3
@@ -88,7 +99,7 @@ from sklearn.model_selection import train_test_split
 
 'Unet - Encoder block'
 
-def EncoderMiniBlock(inputs, n_filters=32, dropout_prob=0.3, max_pooling=True):
+def EncoderMiniBlock(inputs, n_filters=32, dropout_prob=settings['dropout_prob'], max_pooling=True):
     """
     This block uses multiple convolution layers, max pool, relu activation to create an architecture for learning.
     Dropout can be added for regularization to prevent overfitting.
@@ -220,13 +231,21 @@ unet.compile(optimizer=tf.keras.optimizers.Adam(),
              #metrics=['accuracy']
              )
 
+# Setup for checkpoints
+checkpoint = tf.keras.callbacks.ModelCheckpoint(
+    filepath="EIT_model/checkpoints/{epoch:02d}.keras",
+    save_weights_only=False,
+    save_best_only=False)
+
+
 # Run the model in a mini-batch fashion and compute the progress for each epoch
 results = unet.fit(input_train, label_train,
-                   batch_size=4,
-                   steps_per_epoch=2,
-                   epochs=120,
-                   validation_data=(input_val, label_val),
-                   verbose = 1)
+                   batch_size = settings["batch_size"],
+                   steps_per_epoch = settings["steps_per_epoch"],
+                   epochs = settings["epochs"],
+                   validation_data = (input_val, label_val),
+                   verbose = 1,
+                   callbacks = [checkpoint])
 
 
 #-----------------------------------------------------------
@@ -259,7 +278,7 @@ plt.plot(epochs, loss, 'r', label='Training Loss')
 plt.plot(epochs, val_loss, 'b', label='Validation Loss')
 plt.title ('Training and validation loss'   )
 plt.legend()
-plt.show()
+plt.savefig("training_graph.png")
 
 'Make Prediction and save the model'
 
@@ -268,14 +287,14 @@ import numpy as np
 
 classes = unet.predict(input_val)
 
-'Save Model'
-if os.path.isdir("EIT_model/"):    # Remove directory if it exists
-    shutil.rmtree("EIT_model/")
-# Create directories
-dir = 'EIT_model'
-os.makedirs(dir, exist_ok = True)
-# Save
-# model.save('EIT_model/unet.keras')
+# 'Save Model'
+# if os.path.isdir("EIT_model/"):    # Remove directory if it exists
+#     shutil.rmtree("EIT_model/")
+# # Create directories
+# dir = 'EIT_model'
+# os.makedirs(dir, exist_ok = True)
+# # Save
+# # model.save('EIT_model/unet.keras')
 unet.save('EIT_model/unet.keras')
 
 'Save validation set'
@@ -287,11 +306,11 @@ np.save('Validation/label_val', label_val)
 
 'Plot prediction'
 
-example = 0
+# example = 0
 
-plt.figure(figsize=(10, 10))
-plt.subplot(4,4,1)
-plt.imshow(classes[example], interpolation='none')
-plt.subplot(4,4,2)
-plt.imshow(label_val[example], interpolation='none')
-plt.show()
+# plt.figure(figsize=(10, 10))
+# plt.subplot(4,4,1)
+# plt.imshow(classes[example], interpolation='none')
+# plt.subplot(4,4,2)
+# plt.imshow(label_val[example], interpolation='none')
+# plt.show()
