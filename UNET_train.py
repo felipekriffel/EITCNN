@@ -12,67 +12,47 @@ SETTINGS_PATH = "unet_train_settings.json"
 with open(SETTINGS_PATH) as f:
     settings = json.loads(f.read())
 
-# T1 = np.load('EIT_Data_for_CNN.npy')
-DATAPATH = "DATAGEN"
-T1 = []
-for file in os.listdir(DATAPATH):
-  T1.append(np.load(DATAPATH+"/"+file))
-
 per = settings['split_percentage']                               # percentage used in training
 
-n_samples = np.array(T1).shape[0]
-n_g = np.array(T1).shape[1] - 3
-print('number of currents: ' + str(n_g))
-
+# T1 = np.load('EIT_Data_for_CNN.npy')
+DATAPATH = "DATAGEN"
+filename_list = os.listdir(DATAPATH)[:200]
+n_samples = len(filename_list)
 n_train = math.floor(n_samples*per)    # number samples for training
 print('Number of samples for training: ' + str(n_train))
 n_val = n_samples - n_train        # number of samples for validation
 
 # permute the lines
 perm = np.random.permutation(n_samples)
+
 # print(perm)
 division = perm[:n_train]
 division2 = perm[n_train:]
-# print(division)
-T1_train = []
-for i in range(n_train):
-  T1_train.append(T1[division[i]])
-T1_val = []
-for i in range(n_val):
-  T1_val.append(T1[division2[i]])
-print(np.array(T1_train).shape)
 
-T2 = []
 input_train = []
 label_train = []
 input_val = []
 label_val = []
 
-for i in range(n_samples):
-  T2.append(np.transpose(T1[i]))
-for i in range(n_train):
-  input_train.append(np.transpose(T1_train[i][:n_g + 2]))
-  label_train.append(np.transpose(T1_train[i][n_g + 2]))
-for i in range(n_val):
-  input_val.append(np.transpose(T1_val[i][:n_g + 2]))
-  label_val.append(np.transpose(T1_val[i][n_g + 2]))
-
+for i in division:
+  file_data = np.load(DATAPATH+"/"+filename_list[i])
+  n_g = file_data.shape[0]-3
+  # input_train.append(np.transpose(file_data[:n_g + 2]))
+  # label_train.append(np.transpose(file_data[n_g + 2:]))
+  input_train.append(np.transpose(file_data[:n_g + 2]))
+  label_train.append(np.transpose(file_data[n_g + 2:]))
+  
 input_train = tf.convert_to_tensor(input_train)
 label_train = tf.convert_to_tensor(label_train)
+
+for i in division2:
+  file_data = np.load(DATAPATH+"/"+filename_list[i])
+  n_g = file_data.shape[0]-3
+  input_val.append(np.transpose(file_data[:n_g + 2]))
+  label_val.append(np.transpose(file_data[n_g + 2:]))
+  
 input_val = tf.convert_to_tensor(input_val)
 label_val = tf.convert_to_tensor(label_val)
-
-'Plot a sample'
-plt.figure(figsize=(10, 10))
-# for i in range(0, n_g+3):
-#     plt.subplot(5,4,i+1)
-#     plt.imshow(np.transpose(T2[0])[i], interpolation='none')
-
-# esvaziar a memoria
-T1 = []
-T1_train = []
-T1_val = []
-T2 = []
 
 # for data load
 import os
@@ -235,13 +215,16 @@ unet.compile(optimizer=tf.keras.optimizers.Adam(),
 checkpoint = tf.keras.callbacks.ModelCheckpoint(
     filepath="EIT_model/checkpoints/{epoch:02d}.keras",
     save_weights_only=False,
-    save_best_only=False)
+    save_best_only=False,
+    save_freq = (n_samples//settings["batch_size"])*settings['save_period']
+    )
 
+print("Save Freq",(n_samples//settings["batch_size"])*settings['save_period'])
 
 # Run the model in a mini-batch fashion and compute the progress for each epoch
 results = unet.fit(input_train, label_train,
                    batch_size = settings["batch_size"],
-                   steps_per_epoch = settings["steps_per_epoch"],
+                  #  steps_per_epoch = settings["steps_per_epoch"],
                    epochs = settings["epochs"],
                    validation_data = (input_val, label_val),
                    verbose = 1,
