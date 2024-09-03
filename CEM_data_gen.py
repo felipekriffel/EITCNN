@@ -60,7 +60,9 @@ V = dir_problem.V     # Continuous Garlekin space function
 # eitx.plot_mesh(mesh)
 
 #"Define gamma as constant = Background"
-iv, bg= settings['iv'], settings['bg']
+bg = settings['bg']
+ivhigh,ivlow = settings['ivhigh'], settings['ivlow']
+p_ivhigh,p_ivlow = settings['p_ivhigh'], settings['p_ivlow']
 gamma0 = dolfinx.fem.Function(V0)
 gamma0.x.array[:] = bg
 
@@ -97,6 +99,11 @@ n_samples = settings["n_samples"]               # number of samples in order: 1 
 noise_level = settings["noise_level"]                   # % of artificial noise in data
 
 nn_samples = len(n_samples)
+print("Generating circle data:")
+for n in range(len(n_samples)):
+  print(f"{n+1} Circles:", n_samples[n])
+
+print("Total:",nn_samples,"\n")
 multi = 4                        # number of samples is multiplied by this number
 for m in range(nn_samples):
   m_multi_m = (multi**m)*n_samples[m]
@@ -127,20 +134,23 @@ for m in range(nn_samples):
       print('Generating sample: ' + str(np.sum(n_samples[:m]) + sample + 1))
     else:
       print('Generating sample: ' + str(sample + 1))
-
+    
     "Generate Background + Inclusion"
-    gamma = eitx.GammaCircle(V0,iv,bg,rad_1[0,sample],center_xy[0,sample], center_xy[1,sample])
+    gamma = eitx.GammaCircle(V0,1,bg,0,0, 0)
     gamma_prov = gamma.x.array
-    for p in range(m):
-      ValuesCells1 = eitx.GammaCircle(V0,iv,0.0,rad_1[p+1,sample],center_xy[2*p+2,sample], center_xy[2*p+3,sample]).x.array
-      gamma_prov = np.minimum(gamma_prov + ValuesCells1, iv)
+    for p in range(m+1):
+      iv = np.random.choice([ivhigh,ivlow],p=[p_ivhigh,p_ivlow])
+
+      ValuesCells1 = eitx.GammaCircle(V0,iv-bg,0.0,rad_1[p,sample],center_xy[2*p,sample], center_xy[2*p+1,sample]).x.array
+      # gamma_prov = np.minimum(gamma_prov + ValuesCells1, ivhigh)
+      gamma_prov = gamma_prov + ValuesCells1
     gamma.x.array[:]= gamma_prov
 
     #"Plot"
     # eitx.plot_indicator_function(gamma)
 
     "Define data in a homogeneus grid for training"
-    A = eitx.genGammaImg(gamma,mesh_x,mesh_y,bg)
+    A = eitx.genGammaImg(gamma,mesh_x,mesh_y,bg,ivhigh,ivlow)
 
     "Solve Forward Problem with Background + Inclusion"
     list_u1, list_U1_m = dir_problem.solve_problem_current(I_all, gamma)
