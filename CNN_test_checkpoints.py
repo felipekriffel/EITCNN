@@ -1,13 +1,17 @@
 import dolfinx
 import pyvista
 import eitx
-import os
 
 pyvista.set_jupyter_backend("static")
 
 FILEPATH = ''
 DATAMAT_PATH = "fin_data/datamat/"
-MODELPATH = "results-09-05/results-09-04"
+CHECKPOINTS_PATH = 'results-09-05/results-09-04/checkpoints'
+exper = ['1_1','1_2', '1_3', '1_4', '2_2','2_3','2_4','3_6','3_4','3_5','4_1' ,'4_3', '4_4','5_2']    # experiments
+SAVEPATH = r'/mnt/c/Users/Felipe Riffel/Documents/UFSC - Mestrado/EIT/EITCNN/results-09-10'
+
+if not os.path.isdir(SAVEPATH):
+    os.mkdir(SAVEPATH)
 
 'Load files'
 
@@ -21,10 +25,6 @@ import scipy
 mat = scipy.io.loadmat(DATAMAT_PATH+"datamat_1_0")
 Uel=mat.get("Uel").T
 CP=mat.get("CurrentPattern").T
-SAVEPATH = r'/mnt/c/Users/Felipe Riffel/Documents/UFSC - Mestrado/EIT/EITCNN/results-09-10'
-
-if not os.path.isdir(SAVEPATH):
-    os.mkdir(SAVEPATH)
 
 #Selecting Potentials
 Uel_b=Uel[-15:] #Matrix of measuarements
@@ -121,7 +121,6 @@ import tensorflow as tf
 
 # exper = ['1_2', '1_3', '1_4']    # experiments
 #exper = ['1_2', '1_3', '1_4', '2_3', '2_5', '2_6']    # experiments
-exper = ['1_1','1_2', '1_3', '1_4', '2_2','2_3','2_4','3_6','3_4','3_5','4_1' ,'4_3', '4_4','5_2']    # experiments
 n_exper = len(exper)
 # exper = 'datamat_1_2'
 
@@ -183,53 +182,56 @@ mat.keys()
 'Upload model'
 
 from tensorflow import keras
+import os
 #uploaded = files.upload()
-
-
-model = keras.models.load_model(FILEPATH+MODELPATH+'/unet.keras')
-model.summary()
-
-'Predict and prepare images to plot'
 from scipy.ndimage import rotate
 
-classes = model.predict(input_val)
-result = 0.5*np.ones((n_exper,N,N))
-for k in range(n_exper):
-  result1 = rotate(classes[k],180)
-  # result1 = classes[k]
-  for i in range(N):
-    for j in range(N):
-      if x[i]**2 + y[j]**2 > radius**2:
-        result1[i][j] = 0.5
-  # result[k, 5:105, 5:105] = result1[:,:,0]
-  result[k, :, :] = result1[:,:,0]
-  # print(np.array(result).shape)
 
-result.shape
+checkpoints_dir = os.listdir(CHECKPOINTS_PATH)
 
-'prepare target photo list'
-# plt.figure(figsize=(20, 20))
-photo_array = []
-for test in range(len(exper)):
-  img = np.asarray(Image.open(FILEPATH+'fin_data/target_photos/fantom_' + exper[test] + '.jpg'))
-  photo_array.append(img)
+for checkpoint in checkpoints_dir:
+    model = keras.models.load_model(CHECKPOINTS_PATH+"/"+checkpoint)
 
-'Plot'
-# plt.figure(figsize=(10, 40))
-fig, ax = plt.subplots(result.shape[0],2,figsize=(10,40))
-img_array = []
-for k in range(result.shape[0]):
-  img_array.append(ax[k][0].imshow(result[k], interpolation='none',vmin=-1.0,vmax=1.0))
-  ax[k][0].set_axis_off()
-  ax[k][1].imshow(photo_array[k])
-  ax[k][1].set_axis_off()
+    'Predict and prepare images to plot'
 
-fig.colorbar(img_array[0],ax=ax,orientation='vertical')
-plt.savefig(SAVEPATH+'/test_result.png')
-#plt.subplot(4,4,2)
-#img = np.asarray(Image.open('fantom_' + exper[test] + '.jpg'))
-#plt.imshow(img)
-#plt.imshow(label_val[example], interpolation='none')
+    classes = model.predict(input_val)
+    result = 0.5*np.ones((n_exper,N,N))
+    for k in range(n_exper):
+        result1 = rotate(classes[k],180)
+        # result1 = classes[k]
+        for i in range(N):
+            for j in range(N):
+                if x[i]**2 + y[j]**2 > radius**2:
+                    result1[i][j] = 0.5
+        # result[k, 5:105, 5:105] = result1[:,:,0]
+        result[k, :, :] = result1[:,:,0]
+        # print(np.array(result).shape)
+        result.shape
+        'prepare target photo list'
+        # plt.figure(figsize=(20, 20))
+    
+    photo_array = []
+    for test in range(len(exper)):
+        img = np.asarray(Image.open(FILEPATH+'fin_data/target_photos/fantom_' + exper[test] + '.jpg'))
+        photo_array.append(img)
 
-'Plot (all pictures)'
+    'Plot'
+    # plt.figure(figsize=(10, 40))
+    fig, ax = plt.subplots(result.shape[0],2,figsize=(10,40))
+    img_array = []
+    for k in range(result.shape[0]):
+        img_array.append(ax[k][0].imshow(result[k], interpolation='none',vmin=-1.0,vmax=1.0))
+        ax[k][0].set_axis_off()
+        ax[k][1].imshow(photo_array[k])
+        ax[k][1].set_axis_off()
+    fig.colorbar(img_array[0],ax=ax,orientation='vertical')
+
+    check_epoch = checkpoint.replace(".keras","")
+    plt.suptitle("Results for epoch "+ check_epoch)
+    plt.savefig(f'{SAVEPATH}/test_result_epoch_{check_epoch}.png')
+        #plt.subplot(4,4,2)
+        #img = np.asarray(Image.open('fantom_' + exper[test] + '.jpg'))
+        #plt.imshow(img)
+        #plt.imshow(label_val[example], interpolation='none')
+    'Plot (all pictures)'
 
