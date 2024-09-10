@@ -990,8 +990,8 @@ def genGammaImg(gamma,mesh_x,mesh_y,bg,ivhigh,ivlow):
   gamma_matrix = np.reshape(gamma_array,(N,N))
 
   gamma_bg = np.where(np.isclose(gamma_matrix,bg),0,0)
-  gamma_ivhigh = np.where(np.isclose(gamma_matrix,ivhigh),2,0)
-  gamma_ivlow = np.where(np.isclose(gamma_matrix,ivlow),1,0)
+  gamma_ivhigh = np.where(np.isclose(gamma_matrix,ivhigh),1,0)
+  gamma_ivlow = np.where(np.isclose(gamma_matrix,ivlow),-1,0)
 
 
   img_matrix = gamma_bg + gamma_ivhigh + gamma_ivlow

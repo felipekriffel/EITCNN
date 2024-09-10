@@ -15,44 +15,83 @@ with open(SETTINGS_PATH) as f:
 per = settings['split_percentage']                               # percentage used in training
 
 # T1 = np.load('EIT_Data_for_CNN.npy')
-DATAPATH = "DATAGEN"
-filename_list = os.listdir(DATAPATH)[:200]
-n_samples = len(filename_list)
-n_train = math.floor(n_samples*per)    # number samples for training
+with open(settings['tfrecordpath']+"/data_info.json") as f:
+    data_info = json.loads(f.read())
+
+# filename_list = os.listdir(DATAPATH)
+# n_samples = len(filename_list)
+# n_train = math.floor(n_samples*per)    # number samples for training
+# print('Number of samples for training: ' + str(n_train))
+# n_val = n_samples - n_train        # number of samples for validation
+
+n_g = settings['n_g']
+n_samples = data_info['n_samples']
+n_train = data_info['n_train']
+n_val = data_info['n_val']
+
+print("Number of currents:",n_g)
+print("Number of samples:", n_samples)
 print('Number of samples for training: ' + str(n_train))
-n_val = n_samples - n_train        # number of samples for validation
+
+image_feature_description = {
+    'height': tf.io.FixedLenFeature([], tf.int64),
+    'width': tf.io.FixedLenFeature([], tf.int64),
+    'depth': tf.io.FixedLenFeature([], tf.int64),
+    'currents': tf.io.FixedLenFeature([], tf.int64),
+    'sample_raw': tf.io.FixedLenFeature([], tf.string),
+    'admitivity_raw': tf.io.FixedLenFeature([], tf.string),
+}
+
+def _parse_image_function(example_proto):
+  # Parse the input tf.train.Example proto using the dictionary above.
+  return tf.io.parse_single_example(example_proto, image_feature_description)
+
+def _parse_image_tensor(image_features):
+  height = image_features['height']
+  width = image_features['width']
+  depth = image_features['depth']
+  sample_array_raw = tf.io.decode_raw(image_features['sample_raw'],tf.float64)
+  # sample_array_raw = np.frombuffer(image_features['sample_raw'].numpy())
+  sample_array = tf.reshape(sample_array_raw,[height,width,depth])
+  # admitivity_raw = np.frombuffer(image_features['admitivity_raw'].numpy())
+  admitivity_raw = tf.io.decode_raw(image_features['admitivity_raw'],tf.float64)
+  admitivity = tf.reshape(admitivity_raw,[height,width])
+  return sample_array,admitivity
+
+
+def create_sample_dataset(record_file,batch_size=settings['batch_size']):
+  raw_image_dataset = tf.data.TFRecordDataset(record_file)
+  parsed_image_dataset = raw_image_dataset.map(_parse_image_function)
+  parsed_image_dataset = parsed_image_dataset.map(_parse_image_tensor)
+  parsed_image_dataset = parsed_image_dataset.batch(batch_size)
+  return parsed_image_dataset.prefetch(1)
+
+tfrecord_dirpath = settings['tfrecordpath']
+dataset = create_sample_dataset(tfrecord_dirpath+"/train.tfrecords")
+dataset_val = create_sample_dataset(tfrecord_dirpath+"/validation.tfrecords")
 
 # permute the lines
-perm = np.random.permutation(n_samples)
+# perm = np.random.permutation(n_samples)
 
-# print(perm)
-division = perm[:n_train]
-division2 = perm[n_train:]
-
-input_train = []
-label_train = []
-input_val = []
-label_val = []
-
-for i in division:
-  file_data = np.load(DATAPATH+"/"+filename_list[i])
-  n_g = file_data.shape[0]-3
-  # input_train.append(np.transpose(file_data[:n_g + 2]))
-  # label_train.append(np.transpose(file_data[n_g + 2:]))
-  input_train.append(np.transpose(file_data[:n_g + 2]))
-  label_train.append(np.transpose(file_data[n_g + 2:]))
+# for i in division:
+#   file_data = np.load(DATAPATH+"/"+filename_list[i])
+#   n_g = file_data.shape[0]-3
+#   # input_train.append(np.transpose(file_data[:n_g + 2]))
+#   # label_train.append(np.transpose(file_data[n_g + 2:]))
+#   input_train.append(np.transpose(file_data[:n_g + 2]))
+#   label_train.append(np.transpose(file_data[n_g + 2:]))
   
-input_train = tf.convert_to_tensor(input_train)
-label_train = tf.convert_to_tensor(label_train)
+# input_train = tf.convert_to_tensor(input_train)
+# label_train = tf.convert_to_tensor(label_train)
 
-for i in division2:
-  file_data = np.load(DATAPATH+"/"+filename_list[i])
-  n_g = file_data.shape[0]-3
-  input_val.append(np.transpose(file_data[:n_g + 2]))
-  label_val.append(np.transpose(file_data[n_g + 2:]))
+# for i in division2:
+#   file_data = np.load(DATAPATH+"/"+filename_list[i])
+#   n_g = file_data.shape[0]-3
+#   input_val.append(np.transpose(file_data[:n_g + 2]))
+#   label_val.append(np.transpose(file_data[n_g + 2:]))
   
-input_val = tf.convert_to_tensor(input_val)
-label_val = tf.convert_to_tensor(label_val)
+# input_val = tf.convert_to_tensor(input_val)
+# label_val = tf.convert_to_tensor(label_val)
 
 # for data load
 import os
@@ -222,11 +261,11 @@ checkpoint = tf.keras.callbacks.ModelCheckpoint(
 print("Save Freq",(n_samples//settings["batch_size"])*settings['save_period'])
 
 # Run the model in a mini-batch fashion and compute the progress for each epoch
-results = unet.fit(input_train, label_train,
+results = unet.fit(dataset,
                    batch_size = settings["batch_size"],
-                  #  steps_per_epoch = settings["steps_per_epoch"],
+                   steps_per_epoch = settings["steps_per_epoch"],
                    epochs = settings["epochs"],
-                   validation_data = (input_val, label_val),
+                   validation_data = dataset_val,
                    verbose = 1,
                    callbacks = [checkpoint])
 
@@ -268,8 +307,6 @@ plt.savefig("training_graph.png")
 import os, shutil
 import numpy as np
 
-classes = unet.predict(input_val)
-
 # 'Save Model'
 # if os.path.isdir("EIT_model/"):    # Remove directory if it exists
 #     shutil.rmtree("EIT_model/")
@@ -281,9 +318,9 @@ classes = unet.predict(input_val)
 unet.save('EIT_model/unet.keras')
 
 'Save validation set'
-os.makedirs('Validation', exist_ok = True)
-np.save('Validation/input_val', input_val)
-np.save('Validation/label_val', label_val)
+# os.makedirs('Validation', exist_ok = True)
+# np.save('Validation/input_val', input_val)
+# np.save('Validation/label_val', label_val)
 
 # model = tf.keras.models.load_model('unet.keras')
 

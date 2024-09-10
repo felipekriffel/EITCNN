@@ -1,7 +1,11 @@
 {
+    "datapath": "DATAGEN",
+    "tfrecordpath":"data",
+    "n_g": 15,
     "split_percentage": 0.9,
     "dropout_prob": 0.3,
     "batch_size" : 4,
-    "steps_per_epoch" : 2,
-    "epochs" : 10
+    "steps_per_epoch" : 20,
+    "epochs" : 10,
+    "save_period": 2
 }

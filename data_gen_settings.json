@@ -1,7 +1,10 @@
 {
     "bg": 1,
-    "iv": 10,
+    "ivhigh": 10,
+    "ivlow": 0.1,
+    "p_ivhigh":0.5,
+    "p_ivlow":0.5,
     "N":  128,
-    "n_samples": [5,5,5],
+    "n_samples": [500,600,800],
     "noise_level": 0.0   
 }
