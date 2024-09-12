@@ -7,7 +7,7 @@ pyvista.set_jupyter_backend("static")
 
 FILEPATH = ''
 DATAMAT_PATH = "fin_data/datamat/"
-MODELPATH = "results-09-05/results-09-04"
+MODELPATH = "EIT_model"
 
 'Load files'
 
@@ -21,7 +21,7 @@ import scipy
 mat = scipy.io.loadmat(DATAMAT_PATH+"datamat_1_0")
 Uel=mat.get("Uel").T
 CP=mat.get("CurrentPattern").T
-SAVEPATH = r'/mnt/c/Users/Felipe Riffel/Documents/UFSC - Mestrado/EIT/EITCNN/results-09-10'
+SAVEPATH = r'/mnt/c/Users/Felipe/Documents/results-09-12'
 
 if not os.path.isdir(SAVEPATH):
     os.mkdir(SAVEPATH)
@@ -121,7 +121,7 @@ import tensorflow as tf
 
 # exper = ['1_2', '1_3', '1_4']    # experiments
 #exper = ['1_2', '1_3', '1_4', '2_3', '2_5', '2_6']    # experiments
-exper = ['1_1','1_2', '1_3', '1_4', '2_2','2_3','2_4','3_6','3_4','3_5','4_1' ,'4_3', '4_4','5_2']    # experiments
+exper = ['1_1','1_2', '1_3', '1_4', '2_2','2_3','2_4','2_5','2_6','3_1','3_2','3_6','3_4','3_5','4_1' ,'4_3', '4_4','5_2']    # experiments
 n_exper = len(exper)
 # exper = 'datamat_1_2'
 

@@ -1,14 +1,15 @@
 import dolfinx
 import pyvista
 import eitx
+import os
 
 pyvista.set_jupyter_backend("static")
 
 FILEPATH = ''
 DATAMAT_PATH = "fin_data/datamat/"
-CHECKPOINTS_PATH = 'results-09-05/results-09-04/checkpoints'
-exper = ['1_1','1_2', '1_3', '1_4', '2_2','2_3','2_4','3_6','3_4','3_5','4_1' ,'4_3', '4_4','5_2']    # experiments
-SAVEPATH = r'/mnt/c/Users/Felipe Riffel/Documents/UFSC - Mestrado/EIT/EITCNN/results-09-10'
+CHECKPOINTS_PATH =  r'/mnt/c/Users/Felipe/Documents/results-09-12/EIT_model/checkpoints'
+exper = ['1_1','1_2', '1_3', '1_4', '2_2','2_3','2_4','2_5','2_6','3_1','3_2','3_6','3_4','3_5','4_1' ,'4_3', '4_4','5_2']    # experiments
+SAVEPATH = r'/mnt/c/Users/Felipe/Documents/results-09-12/checkpoints'
 
 if not os.path.isdir(SAVEPATH):
     os.mkdir(SAVEPATH)
@@ -188,6 +189,7 @@ from scipy.ndimage import rotate
 
 
 checkpoints_dir = os.listdir(CHECKPOINTS_PATH)
+print(checkpoints_dir)
 
 for checkpoint in checkpoints_dir:
     model = keras.models.load_model(CHECKPOINTS_PATH+"/"+checkpoint)

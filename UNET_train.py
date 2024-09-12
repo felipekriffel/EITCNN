@@ -8,6 +8,10 @@ import json
 import os
 
 SETTINGS_PATH = "unet_train_settings.json"
+SAVEPATH =  r'/mnt/c/Users/Felipe/Documents/results-09-12/'
+
+if not os.path.isdir(SAVEPATH):
+    os.mkdir(SAVEPATH)
 
 with open(SETTINGS_PATH) as f:
     settings = json.loads(f.read())
@@ -28,7 +32,11 @@ n_g = settings['n_g']
 n_samples = data_info['n_samples']
 n_train = data_info['n_train']
 n_val = data_info['n_val']
-
+if settings['steps_per_epoch'] == "full":
+   steps_per_epoch = n_train // settings['batch_size']
+else:
+   steps_per_epoch = settings['steps_per_epoch']
+   
 print("Number of currents:",n_g)
 print("Number of samples:", n_samples)
 print('Number of samples for training: ' + str(n_train))
@@ -63,7 +71,7 @@ def create_sample_dataset(record_file,batch_size=settings['batch_size']):
   raw_image_dataset = tf.data.TFRecordDataset(record_file)
   parsed_image_dataset = raw_image_dataset.map(_parse_image_function)
   parsed_image_dataset = parsed_image_dataset.map(_parse_image_tensor)
-  parsed_image_dataset = parsed_image_dataset.batch(batch_size)
+  parsed_image_dataset = parsed_image_dataset.repeat(settings['epochs']).batch(batch_size)
   return parsed_image_dataset.prefetch(1)
 
 tfrecord_dirpath = settings['tfrecordpath']
@@ -206,8 +214,8 @@ def UNetCompiled(input_size=(100,100,n_g + 2), n_filters=32, n_classes=3):
    cblock1 = EncoderMiniBlock(inputs, n_filters,dropout_prob=0, max_pooling=True)
    cblock2 = EncoderMiniBlock(cblock1[0],n_filters*2,dropout_prob=0, max_pooling=True)
    cblock3 = EncoderMiniBlock(cblock2[0], n_filters*4,dropout_prob=0, max_pooling=True)
-   cblock4 = EncoderMiniBlock(cblock3[0], n_filters*8,dropout_prob=0.3, max_pooling=True)
-   cblock5 = EncoderMiniBlock(cblock4[0], n_filters*16, dropout_prob=0.3, max_pooling=False)
+   cblock4 = EncoderMiniBlock(cblock3[0], n_filters*8,dropout_prob=settings['dropout_prob'], max_pooling=True)
+   cblock5 = EncoderMiniBlock(cblock4[0], n_filters*16, dropout_prob=settings['dropout_prob'], max_pooling=False)
 
    # Decoder includes multiple mini blocks with decreasing number of filters
    # Observe the skip connections from the encoder are given as input to the decoder
@@ -263,7 +271,7 @@ print("Save Freq",(n_samples//settings["batch_size"])*settings['save_period'])
 # Run the model in a mini-batch fashion and compute the progress for each epoch
 results = unet.fit(dataset,
                    batch_size = settings["batch_size"],
-                   steps_per_epoch = settings["steps_per_epoch"],
+                   steps_per_epoch = steps_per_epoch,
                    epochs = settings["epochs"],
                    validation_data = dataset_val,
                    verbose = 1,
@@ -292,6 +300,9 @@ epochs   = range(len(loss)) # Get number of epochs
 #plt.title ('Training and validation accuracy')
 #plt.figure()
 
+unet.save('EIT_model/unet.keras')
+unet.save(SAVEPATH+'unet.keras')
+
 #------------------------------------------------
 # Plot training and validation loss per epoch
 #------------------------------------------------
@@ -300,6 +311,7 @@ plt.plot(epochs, loss, 'r', label='Training Loss')
 plt.plot(epochs, val_loss, 'b', label='Validation Loss')
 plt.title ('Training and validation loss'   )
 plt.legend()
+plt.savefig(SAVEPATH+"training_graph.png")
 plt.savefig("training_graph.png")
 
 'Make Prediction and save the model'
@@ -315,7 +327,6 @@ import numpy as np
 # os.makedirs(dir, exist_ok = True)
 # # Save
 # # model.save('EIT_model/unet.keras')
-unet.save('EIT_model/unet.keras')
 
 'Save validation set'
 # os.makedirs('Validation', exist_ok = True)
