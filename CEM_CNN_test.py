@@ -2,12 +2,20 @@ import dolfinx
 import pyvista
 import eitx
 import os
+import json 
 
 pyvista.set_jupyter_backend("static")
 
 FILEPATH = ''
 DATAMAT_PATH = "fin_data/datamat/"
 MODELPATH = "EIT_model"
+SAVEPATH = r'/mnt/c/Users/Felipe Riffel/Documents/UFSC - Mestrado/EIT/EITCNN/results/results-09-16'
+SETTINGS_PATH = "data_gen_settings.json"
+
+with open(SETTINGS_PATH) as f:
+    settings = json.loads(f.read())
+
+currents = settings['currents']
 
 'Load files'
 
@@ -21,13 +29,12 @@ import scipy
 mat = scipy.io.loadmat(DATAMAT_PATH+"datamat_1_0")
 Uel=mat.get("Uel").T
 CP=mat.get("CurrentPattern").T
-SAVEPATH = r'/mnt/c/Users/Felipe/Documents/results-09-12'
 
 if not os.path.isdir(SAVEPATH):
     os.mkdir(SAVEPATH)
 
 #Selecting Potentials
-Uel_b=Uel[-15:] #Matrix of measuarements
+Uel_b=Uel[-15:][currents] #Matrix of measuarements
 print(Uel_b.shape)
 
 #Plot
@@ -52,7 +59,7 @@ list_U0=list_U0_m.flatten() #Matrix to vector
 
 
 #Current
-I_all=CP[-15:]/np.sqrt(2)
+I_all=CP[-15:][currents]/np.sqrt(2)
 l, L=np.shape(I_all) #Number of experiments = 15, Number of Electrodes = 16
 
 # print(I_all)

@@ -10,8 +10,12 @@ SETTINGS_PATH = "data_gen_settings.json"
 with open(SETTINGS_PATH) as f:
     settings = json.loads(f.read())
 
-"Importing modules"
+settings['n_g'] = len(settings["currents"])
 
+with open(settings['datapath']+"/data_info.json","w") as f:
+  f.write(json.dumps(settings))
+
+"Importing modules"
 import logging
 # Set the logging level to suppress most logs
 logging.getLogger('UFL_LEGACY').setLevel(logging.WARNING)
@@ -29,7 +33,7 @@ mat = sp.io.loadmat("datamat_1_2")
 CP = mat.get("CurrentPattern").T
 
 #Current
-I_all=CP[-15:]/np.sqrt(2)
+I_all=CP[-15:][settings['currents']]/np.sqrt(2)
 l, L=np.shape(I_all) #Number of experiments = 15, Number of Electrodes = 16
 # print(I_all)# MESH (For real data)
 
@@ -66,18 +70,11 @@ p_ivhigh,p_ivlow = settings['p_ivhigh'], settings['p_ivlow']
 gamma0 = dolfinx.fem.Function(V0)
 gamma0.x.array[:] = bg
 
-# # "Plot"
-# eitx.plot_indicator_function(gamma0)
-
 #Solving Forward Problem
 list_u, list_U0_m = dir_problem.solve_problem_current(I_all, gamma0)
 list_U0 = np.array(list_U0_m).flatten()
 
-'Plot'
-#np.set_printoptions(linewidth=750, precision=3, suppress=False, threshold=1000, formatter=None)
-#print(np.matrix(np.round(list_U0_m, 3)))
 'Retangular Mesh'
-
 N = settings["N"]                               # grid with N*N points (works well with 0 < N < 400)
 h = 2*radius/(N-1)                    # step size
 x = [radius - i*h for i in range(N)]  # x grid points
@@ -94,9 +91,8 @@ for i in range(N):
 T1 = []                               # To save data
 
 # Loop for generating data
-
-n_samples = settings["n_samples"]               # number of samples in order: 1 circle, 2 circles, 3 circles, etc.
-noise_level = settings["noise_level"]                   # % of artificial noise in data
+n_samples = settings["n_samples"] # number of samples in order: 1 circle, 2 circles, 3 circles, etc.
+noise_level = settings["noise_level"] # % of artificial noise in data
 
 nn_samples = len(n_samples)
 print("Generating circle data:")
@@ -104,13 +100,12 @@ for n in range(len(n_samples)):
   print(f"{n+1} Circles:", n_samples[n])
 
 print("Total:",nn_samples,"\n")
-multi = 4                        # number of samples is multiplied by this number
+multi = 4 # number of samples is multiplied by this number
 for m in range(nn_samples):
   m_multi_m = (multi**m)*n_samples[m]
   rad_1 = np.random.uniform(0.15*radius, 0.3*radius, (m+1, m_multi_m))                # radius of the inclusions
   center_xy = np.random.uniform(-radius*0.5, radius*0.5, size=(2*(m+1), m_multi_m))   # xy-center of the inclusions
-  # print(center_xy), print(rad_1), print(noise)
-  vecpop = []                         # vector with indices to withdraw
+  vecpop = [] # vector with indices to withdraw
   for p in range(m):
     for q in range(m - p):
       for j in range(m_multi_m):
@@ -146,9 +141,6 @@ for m in range(nn_samples):
       gamma_prov = gamma_prov + ValuesCells1
     gamma.x.array[:]= gamma_prov
 
-    #"Plot"
-    # eitx.plot_indicator_function(gamma)
-
     "Define data in a homogeneus grid for training"
     A = eitx.genGammaImg(gamma,mesh_x,mesh_y,bg,ivhigh,ivlow)
 
@@ -157,52 +149,22 @@ for m in range(nn_samples):
 
     "Difference of Resulting Potentials"
     differ = np.array(list_U1_m) - np.array(list_U0_m)
-    noise = np.random.uniform(-1, 1, size=(len(differ),len(differ[0])))                               # noise to be added in data
+    noise = np.random.uniform(-1, 1, size=(len(differ),len(differ[0])))
     noise = noise / np.linalg.norm(noise)
     differ_noisy = differ + noise_level*noise*np.linalg.norm(differ)
-    #print(np.linalg.norm(differ_noisy - differ)/np.linalg.norm(differ))
-    
-    ##Plot
-    # fig, ax = plt.subplots(figsize=(8,5))
-    # for w, U_vec in enumerate(differ_noisy):
-    #  zx=np.linspace(1,1.8,L) + w
-    #  ax.plot(zx,U_vec, linewidth=1.3, marker='.', markersize=5);
 
     "Solve Forward Problem with Background and Difference of Potentials as Currents"
     list_ur_dif, list_U_dif = dir_problem.solve_problem_current(differ_noisy, gamma0)
-
-    # 'Plot'
-    # plt.figure(figsize=(10, 10))
-    # for i in range(0, l):
-      #  plt.subplot(4,4,i+1)
-      #  eitx.plot_tent_function(list_ur_dif[i])
-    # plt.show()
 
     "Define data in a homogeneus grid for training"
     T = np.zeros((l + 3,N,N))
     for k in range(l):
       T[k] = eitx.genPotentialImg(list_ur_dif[k],mesh_x,mesh_y,bg)
-    #   for i in range(N):
-    #     for j in range(N):
-    #       if x[i]**2 + y[j]**2 < radius**2:         # if the grid point is in the circle
-    #         T[k][i][j] = list_ur_dif[k](x[i],y[j])
-    #       else:
-    #         T[k][i][j] = 0
-    # for w in T[k]:
-    #   ' '.join([str(x) for x in w] )
 
-    #'Plot'
-    # plt.figure(figsize=(10, 10))
-    # for i in range(0, l):
-    #    plt.subplot(4,4,i+1)
-    #    plt.imshow(T[i], interpolation='none')
-    # plt.show()
     T[l] = mesh_x
     T[l+1] = mesh_y
     T[l+2] = A
-    T1.append(T)
     np.save(f"DATAGEN/sample_{m+1}_{sample}",T)
   print('Generation of ' + str(m + 1) + ' circle(s) ended.')
 # np.save('EIT_Data_for_CNN', T1)
-print('Data saved at DATAGEN.')
-print(np.array(T1).shape)
+print(f'Data saved at {settings["datapath"]}.')

@@ -53,7 +53,7 @@ def create_tfrecord(record_file,paths):
       writer.write(tf_example.SerializeToString())
     writer.close()
 
-feature_paths = [DATAPATH+'/'+x for x in os.listdir(DATAPATH)]
+feature_paths = [DATAPATH+'/'+x for x in os.listdir(DATAPATH) if x!="data_info.json"]
 
 per = settings['split_percentage']
 

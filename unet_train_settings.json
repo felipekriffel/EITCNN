@@ -1,9 +1,9 @@
 {
     "datapath": "DATAGEN",
     "tfrecordpath":"data",
-    "n_g": 15,
+    "savepath":"/mnt/c/Users/Felipe Riffel/Documents/UFSC - Mestrado/EIT/EITCNN/results/results-09-16/",
     "split_percentage": 0.9,
-    "dropout_prob": 0.3,
+    "dropout_prob": 0.5,
     "batch_size" : 4,
     "steps_per_epoch" : 20,
     "epochs" : 10,

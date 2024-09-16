@@ -8,19 +8,25 @@ import json
 import os
 
 SETTINGS_PATH = "unet_train_settings.json"
-SAVEPATH =  r'/mnt/c/Users/Felipe/Documents/results-09-12/'
-
-if not os.path.isdir(SAVEPATH):
-    os.mkdir(SAVEPATH)
-
 with open(SETTINGS_PATH) as f:
     settings = json.loads(f.read())
 
-per = settings['split_percentage']                               # percentage used in training
+SAVEPATH =  settings['savepath']
+if not os.path.isdir(SAVEPATH):
+    os.mkdir(SAVEPATH)
+
+with open(settings['datapath']+"/data_info.json") as f:
+   data_settings =  json.loads(f.read())
+
+with open(SAVEPATH+'unet_train_settings.json','w') as f:
+   f.write(json.dumps(settings))
 
 # T1 = np.load('EIT_Data_for_CNN.npy')
 with open(settings['tfrecordpath']+"/data_info.json") as f:
     data_info = json.loads(f.read())
+
+with open(SAVEPATH+"data_info.json","w") as f:
+   f.write(json.dumps(data_settings))
 
 # filename_list = os.listdir(DATAPATH)
 # n_samples = len(filename_list)
@@ -28,7 +34,7 @@ with open(settings['tfrecordpath']+"/data_info.json") as f:
 # print('Number of samples for training: ' + str(n_train))
 # n_val = n_samples - n_train        # number of samples for validation
 
-n_g = settings['n_g']
+n_g = data_settings['n_g']
 n_samples = data_info['n_samples']
 n_train = data_info['n_train']
 n_val = data_info['n_val']
