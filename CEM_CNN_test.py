@@ -9,13 +9,17 @@ pyvista.set_jupyter_backend("static")
 FILEPATH = ''
 DATAMAT_PATH = "fin_data/datamat/"
 MODELPATH = "EIT_model"
-SAVEPATH = r'/mnt/c/Users/Felipe Riffel/Documents/UFSC - Mestrado/EIT/EITCNN/results/results-09-16'
 SETTINGS_PATH = "data_gen_settings.json"
+TRAIN_SETTINGS_PATH = "unet_train_settings.json"
 
 with open(SETTINGS_PATH) as f:
     settings = json.loads(f.read())
 
+with open(TRAIN_SETTINGS_PATH) as f:
+    train_settings = json.loads(f.read())
+
 currents = settings['currents']
+SAVEPATH = train_settings['savepath']
 
 'Load files'
 
@@ -232,7 +236,7 @@ for k in range(result.shape[0]):
   ax[k][1].set_axis_off()
 
 fig.colorbar(img_array[0],ax=ax,orientation='vertical')
-plt.savefig(SAVEPATH+'/test_result.png')
+plt.savefig(SAVEPATH+'test_result.png')
 #plt.subplot(4,4,2)
 #img = np.asarray(Image.open('fantom_' + exper[test] + '.jpg'))
 #plt.imshow(img)

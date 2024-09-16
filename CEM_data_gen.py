@@ -3,7 +3,7 @@ import scipy as sp
 import numpy as np
 import dolfinx
 import json
-from matplotlib import pyplot as plt
+import os
 
 SETTINGS_PATH = "data_gen_settings.json"
 
@@ -11,6 +11,9 @@ with open(SETTINGS_PATH) as f:
     settings = json.loads(f.read())
 
 settings['n_g'] = len(settings["currents"])
+
+if not os.path.isdir(settings['datapath']):
+    os.mkdir(settings['datapath'])
 
 with open(settings['datapath']+"/data_info.json","w") as f:
   f.write(json.dumps(settings))
@@ -164,7 +167,7 @@ for m in range(nn_samples):
     T[l] = mesh_x
     T[l+1] = mesh_y
     T[l+2] = A
-    np.save(f"DATAGEN/sample_{m+1}_{sample}",T)
+    np.save(f"{settings['datapath']}/sample_{m+1}_{sample}",T)
   print('Generation of ' + str(m + 1) + ' circle(s) ended.')
 # np.save('EIT_Data_for_CNN', T1)
 print(f'Data saved at {settings["datapath"]}.')
