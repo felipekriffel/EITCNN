@@ -1,0 +1,25 @@
+{
+    "kdamksd":{
+        "currents": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14],
+        "datapath":"DATAGEN_TWOCURRENT",
+        "bg": 1,
+        "ivhigh": 10,
+        "ivlow": 0.1,
+        "p_ivhigh":1,
+        "p_ivlow":0,
+        "N":  128,
+        "n_samples": [15,15,15],
+        "noise_level": 0.0       
+    },
+    "unet_train":{
+        "datapath": "DATAGEN_TWOCURRENT",
+        "tfrecordpath":"data",
+        "savepath":"/mnt/c/Users/Felipe Riffel/Documents/UFSC - Mestrado/EIT/EITCNN/results/results-09-24-2/",
+        "split_percentage": 0.9,    
+        "dropout_prob": 0.5,
+        "batch_size" : 2,
+        "steps_per_epoch" : "full",
+        "epochs" : 8,
+        "save_period": 10       
+    }
+}
