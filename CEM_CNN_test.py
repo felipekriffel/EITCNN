@@ -9,17 +9,11 @@ def main(RESULTS_PATH):
   FILEPATH = ''
   DATAMAT_PATH = "fin_data/datamat/"
   SETTINGS_PATH = RESULTS_PATH + "/data_info.json"
-  TRAIN_SETTINGS_PATH = "unet_train_settings.json"
-
   with open(SETTINGS_PATH) as f:
       settings = json.loads(f.read())
 
-  with open(TRAIN_SETTINGS_PATH) as f:
-      train_settings = json.loads(f.read())
-
   currents = settings['currents']
-  SAVEPATH = train_settings['savepath']
-  MODELPATH = SAVEPATH
+  MODELPATH = RESULTS_PATH
 
   'Load files'
 
@@ -34,8 +28,8 @@ def main(RESULTS_PATH):
   Uel=mat.get("Uel").T
   CP=mat.get("CurrentPattern").T
 
-  if not os.path.isdir(SAVEPATH):
-      os.mkdir(SAVEPATH)
+  if not os.path.isdir(RESULTS_PATH):
+      os.mkdir(RESULTS_PATH)
 
   #Selecting Potentials
   Uel_b=Uel[-15:][currents] #Matrix of measuarements
@@ -150,7 +144,7 @@ def main(RESULTS_PATH):
   #uploaded = files.upload()
 
 
-  model = keras.models.load_model(FILEPATH+MODELPATH+'/unet.keras')
+  model = keras.models.load_model(FILEPATH+MODELPATH+'unet.keras')
   model.summary()
 
   'Predict and prepare images to plot'
@@ -187,7 +181,7 @@ def main(RESULTS_PATH):
     ax[k][1].set_axis_off()
 
   fig.colorbar(img_array[0],ax=ax,orientation='vertical')
-  plt.savefig(SAVEPATH+'test_result.png')
+  plt.savefig(RESULTS_PATH+'test_result.png')
 
 if __name__=='__main__':
    RESULTS_PATH = sys.argv[1]

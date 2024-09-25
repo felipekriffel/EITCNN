@@ -83,8 +83,9 @@ def main(SETTINGS_JSON):
   with open(SAVEPATH+"/data_info.json",'w') as f:
     f.write(json.dumps(data_info))
 
-if __name__=='main':
+if __name__=='__main__':
   # SETTINGS_JSON = "unet_train_settings.json"
+  
   SETTINGS_JSON = sys.argv[1]
   if SETTINGS_JSON.endswith('.json') and os.path.isfile(SETTINGS_JSON):
     with open(SETTINGS_JSON) as f:
