@@ -7,7 +7,7 @@ import sys
 
 def main(RESULTS_PATH):
   FILEPATH = ''
-  DATAMAT_PATH = "fin_data/datamat/"
+  DATAMAT_PATH = "ifsc_data"
   SETTINGS_PATH = RESULTS_PATH + "/data_info.json"
   with open(SETTINGS_PATH) as f:
       settings = json.loads(f.read())
@@ -23,29 +23,71 @@ def main(RESULTS_PATH):
   import numpy as np
   import scipy
 
-  #Load data of background
-  mat = scipy.io.loadmat(DATAMAT_PATH+"datamat_1_0")
-  Uel=mat.get("Uel").T
-  CP=mat.get("CurrentPattern").T
-
   if not os.path.isdir(RESULTS_PATH):
-      os.mkdir(RESULTS_PATH)
+    os.mkdir(RESULTS_PATH)
+
+
+  # Load data of background
+  mat = scipy.io.loadmat(f"{DATAMAT_PATH}/datamat/Referencia.mat")
+  Uel=mat.get("signal_peak")
+
+  # mat = scipy.io.loadmat("Referencia.mat")
+  # Uel=mat.get("signal_peak")
+
+  # mat = scipy.io.loadmat("Vref.mat")
+  # Uel=mat.get("signal_peak")
+
+  #print(Uel.shape)
+  # plt.plot(Uel.T, '-r')
 
   #Selecting Potentials
-  Uel_b=Uel[-15:][currents] #Matrix of measuarements
-  print(Uel_b.shape)
+  Uel_b = Uel.reshape(16,16)    #Matrix of measuarements
+  #print(Uel_b.shape)
+  l, L=np.shape(Uel_b)  #Number of experiments, Number of Electrodes
+
+  #Plot
+  fig, ax = plt.subplots(figsize=(8,5))
+  for i, U_vec in enumerate(Uel_b):
+      x=np.linspace(1,1.8,L)+i
+      ax.plot(x,U_vec, linewidth=1.3, marker='.', markersize=5);
+
+  print(np.sum(Uel_b[0]))
+  # Uel_b[0][0] = -2
+  # Forces sum = 0 on each experiment
+  for i in range(L):
+    Uel_b[i][i] = -np.sum(Uel_b[i]) + Uel_b[i][i]
+    #Uel_b[i][i]=-Uel_b[i][i] #Em cada primeiro emissor, troque de sinal
+    # Uel_b[i] -= np.sum(Uel_b[i])/L #Force a soma ser zero em cada experimento
+
+  #Plot
+  fig, ax = plt.subplots(figsize=(8,5))
+  for i, U_vec in enumerate(Uel_b):
+      x=np.linspace(1,1.8,L)+i
+      ax.plot(x,U_vec, linewidth=1.3, marker='.', markersize=5);
+
 
   #Selecting Potentials
   list_U0_m=np.zeros_like(Uel_b)
 
-  #Convert type of data
+  # Convert type of data
   for index, potential in enumerate(Uel_b):
       list_U0_m[index]=eitx.ConvertingData(potential, method="KIT4")
+  list_U0_m = -list_U0_m #/np.max(list_U0_m)
   list_U0=list_U0_m.flatten() #Matrix to vector
+  # list_U0_m =Uel_b
+
+  #Plot
+  fig, ax = plt.subplots(figsize=(8,5))
+  for i, U_vec in enumerate(list_U0_m):
+      x=np.linspace(1,1.8,L)+i
+      ax.plot(x,U_vec, linewidth=1.3, marker='.', markersize=5)
+  plt.show()
 
   #Current
-  I_all=CP[-15:][currents]/np.sqrt(2)
-  l, L=np.shape(I_all) #Number of experiments = 15, Number of Electrodes = 16
+  L = settings['L']
+  n_g = settings['n_g']
+  I_all= eitx.current_method( L , n_g, method=2)          #Currents
+  # print(I_all)# MESH (For real data)
 
   "Basic Definitions"
   radius=1       #Circle radius
@@ -91,26 +133,39 @@ def main(RESULTS_PATH):
       mesh_x[i][j] = x[i]
       mesh_y[i][j] = y[j]
 
+  ME = []
+  ME.append([0, 1, 15])
+  i, j, k = 0, 1, 2
+  ME.append([i, j, k])
+  while k < 15:
+    i, j, k = i+1, j+1, k+1
+    ME.append([i, j, k])
+  ME.append([0, 14, 15])
+  #print(ME)
+
+
   "Define sigma as constant = Background"
+  bg_estimated = 0.034
   gamma0 = dolfinx.fem.Function(V0) #Define the function with basis DG
-  iv, bg= 10, 1.2
+  iv, bg= 10, 1/0.034
   gamma0.x.array[:] = bg
 
   import tensorflow as tf
 
-  exper = ['1_1','1_2', '1_3', '1_4', '2_2','2_3','2_4','2_5','2_6','3_1','3_2','3_6','3_4','3_5','4_1' ,'4_3', '4_4','5_2']    # experiments
+  exper = [name.replace(".mat","") for name in os.listdir(DATAMAT_PATH+'/datamat')]    # experiments
+
   n_exper = len(exper)
 
   T1 = []
   for sample in range(n_exper):
     #Load experimental data
-    mat = scipy.io.loadmat(DATAMAT_PATH+'datamat_' + exper[sample])
+    mat = scipy.io.loadmat(DATAMAT_PATH+'/datamat/' +exper[sample]+".mat")
     # mat = scipy.io.loadmat(exper)
-    Uel=mat.get("Uel").T
+    Uel=mat.get("signal_peak").T
     # CP=mat.get("CurrentPattern").T
 
     #Selecting Potentials
-    Uel_f=Uel[-15:][currents] #Matrix of measuarements
+    Uel_f=Uel.reshape(16,16) #Matrix of measuarements
 
     #Selecting Potentials
     list_U1_m=np.zeros_like(Uel_f)
@@ -121,6 +176,11 @@ def main(RESULTS_PATH):
 
     # Difference of potential
     differ = [list_U1_m[k] - list_U0_m[k] for k in range(len(list_U0_m))]
+    for s in range(16):
+      differ[s][ME[s]] = 0
+    
+    for i in range(len(differ)):
+      differ[i] = differ[i] - np.sum(differ[i])/13
 
     "Solve Forward Problem with Background and Difference of Potentials as Currents"
     list_ur_dif, list_U_dif = dir_problem.solve_problem_current(differ, gamma0)
@@ -167,7 +227,7 @@ def main(RESULTS_PATH):
   # plt.figure(figsize=(20, 20))
   photo_array = []
   for test in range(len(exper)):
-    img = np.asarray(Image.open(FILEPATH+'fin_data/target_photos/fantom_' + exper[test] + '.jpg'))
+    img = np.asarray(Image.open(f'{DATAMAT_PATH}/target_photos/' + exper[test] + '.jpg'))
     photo_array.append(img)
 
   'Plot'

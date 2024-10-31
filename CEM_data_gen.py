@@ -34,19 +34,21 @@ def main(SETTINGS_JSON):
   "Forward problem in background"
 
   #Loading data (somente para definir a corrente de maneira correta)
-  mat = sp.io.loadmat("datamat_1_2")
+  mat = sp.io.loadmat("fin_data/datamat/datamat_1_2")
   CP = mat.get("CurrentPattern").T
 
   #Current
-  I_all=CP[-15:][settings['currents']]/np.sqrt(2)
-  l, L=np.shape(I_all) #Number of experiments = 15, Number of Electrodes = 16
+  L = settings['L']
+  n_g = settings['n_g']
+  I_all= eitx.current_method( L , n_g, method=2)          #Currents
   # print(I_all)# MESH (For real data)
 
+  
   "Basic Definitions"
   radius=1               #Circle radius
-  per_cober=0.454728409  #Percentage of area covered by electrodes
+  per_cober=0.3543  #Percentage of area covered by electrodes
   rotate=0               #Electrodes Rotation
-  z=np.ones(L)*0.07858  
+  z=np.ones(L)*1e-3  
 
   'Return object with angular position of each electrode'
   ele_pos = eitx.Electrodes(L, per_cober, rotate)
@@ -92,6 +94,16 @@ def main(SETTINGS_JSON):
     for j in range(N):
       mesh_x[i][j] = x[i]
       mesh_y[i][j] = y[j]
+
+  ME = []
+  ME.append([0, 1, 15])
+  i, j, k = 0, 1, 2
+  ME.append([i, j, k])
+  while k < 15:
+    i, j, k = i+1, j+1, k+1
+    ME.append([i, j, k])
+  ME.append([0, 14, 15])
+  #print(ME)
 
   T1 = []                               # To save data
 
@@ -154,6 +166,12 @@ def main(SETTINGS_JSON):
 
       "Difference of Resulting Potentials"
       differ = np.array(list_U1_m) - np.array(list_U0_m)
+      for s in range(16):
+        differ[s][ME[s]] = 0
+      
+      for i in range(differ.shape[0]):
+        differ[i] = differ[i] - np.sum(differ[i])/13
+  
       noise = np.random.uniform(-1, 1, size=(len(differ),len(differ[0])))
       noise = noise / np.linalg.norm(noise)
       differ_noisy = differ + noise_level*noise*np.linalg.norm(differ)
@@ -162,13 +180,13 @@ def main(SETTINGS_JSON):
       list_ur_dif, list_U_dif = dir_problem.solve_problem_current(differ_noisy, gamma0)
 
       "Define data in a homogeneus grid for training"
-      T = np.zeros((l + 3,N,N))
-      for k in range(l):
+      T = np.zeros((n_g + 3,N,N))
+      for k in range(n_g):
         T[k] = eitx.genPotentialImg(list_ur_dif[k],mesh_x,mesh_y,bg)
 
-      T[l] = mesh_x
-      T[l+1] = mesh_y
-      T[l+2] = A
+      T[n_g] = mesh_x
+      T[n_g+1] = mesh_y
+      T[n_g+2] = A
       np.save(f"{settings['datapath']}/sample_{m+1}_{sample}",T)
     print('Generation of ' + str(m + 1) + ' circle(s) ended.')
   # np.save('EIT_Data_for_CNN', T1)

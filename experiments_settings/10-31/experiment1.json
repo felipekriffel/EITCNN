@@ -1,0 +1,26 @@
+{
+    "":{
+        "L":16,
+        "currents": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
+        "datapath":"DATAGEN/DATAGEN_1stTest",
+        "bg": 1,
+        "ivhigh": 10,
+        "ivlow": 0.1,
+        "p_ivhigh":0.5,
+        "p_ivlow":0.5,
+        "N":  128,
+        "n_samples": [5,5,5],
+        "noise_level": 0.0   
+    },
+    "unet_train":{
+        "datapath": "DATAGEN/DATAGEN_1stTest",
+        "tfrecordpath":"data",
+        "savepath":"/mnt/c/Users/Felipe/Documents/results-10-31/",
+        "split_percentage": 0.9,    
+        "dropout_prob": 0.5,
+        "batch_size" : 2,
+        "steps_per_epoch" : "full",
+        "epochs" : 5,
+        "save_period": 10       
+    }
+}
