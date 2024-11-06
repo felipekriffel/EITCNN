@@ -1,12 +1,12 @@
 {
-    "currents": [0,4,8,12],
-    "datapath":"DATAGEN",
+    "currents": [7],
+    "datapath":"DATAGEN_ONECURRENT",
     "bg": 1,
     "ivhigh": 10,
     "ivlow": 0.1,
-    "p_ivhigh":0.5,
-    "p_ivlow":0.5,
+    "p_ivhigh":1,
+    "p_ivlow":0,
     "N":  128,
-    "n_samples": [5,5,5],
-    "noise_level": 0.0   
+    "n_samples": [3,3,3],
+    "noise_level": 0.0
 }

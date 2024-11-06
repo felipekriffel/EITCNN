@@ -1,0 +1,11 @@
+{
+    "datapath": "approxinv_data/samples/conductive_alpha_1e-4",
+    "tfrecordpath":"data",
+    "savepath":"/mnt/c/Users/Felipe Riffel/Documents/UFSC - Mestrado/EIT/EITCNN/results/results-11-05-approxinv/",
+    "split_percentage": 0.9,    
+    "dropout_prob": 0.3,
+    "batch_size" : 32,
+    "steps_per_epoch" : "full",
+    "epochs" : 15,
+    "save_period": 30       
+}
