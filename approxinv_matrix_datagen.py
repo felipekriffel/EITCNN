@@ -58,9 +58,11 @@ def main(SETTINGS_JSON):
     for alpha in alpha_array:
         Wk_list = get_wk_matrices(A,b,alpha,k_list)
         bk_list = get_bk_vectors(Wk_list,b)
-        for Wk,bk,k in zip(Wk_list,bk_list,k_list):
+        x0k_list = get_x0_vectors(A,gamma0.x.array,alpha,k_list)
+        for Wk,bk,x0k,k in zip(Wk_list,bk_list,x0k_list,k_list):
             np.save(f"{datapath}/matrix/W_{k}_alpha_{alpha}",Wk)
             np.save(f"{datapath}/matrix/b_{k}_alpha_{alpha}",bk)
+            np.save(f"{datapath}/matrix/x0_{k}_alpha_{alpha}",x0k)
 
 
 if __name__=="__main__":

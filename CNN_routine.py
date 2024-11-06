@@ -4,6 +4,7 @@ import json
 import subprocess
 import logging
 import approxinv
+import traceback
 
 # This code perform all the data gen, train and test procedure
 # create a json file for each experiment, inform
@@ -37,18 +38,18 @@ def main(experiments_list):
             subprocess.run(["python3", "approxinv_UNET_train.py", json.dumps(experiment['unet_train'])],check=True)
 
             print("\nTesting model samples")
-            subprocess.run(['python3',"approxinv_CEM_CNN_test.py",experiment['unet_train']['savepath']],check=True)
+            subprocess.run(['python3',"approxinv_CNN_test.py",experiment['unet_train']['savepath']],check=True)
 
-            with open(experiment['unet_train']['save_path']+"experiment_settings.json","w"):
+            with open(experiment['unet_train']['savepath']+"experiment_settings.json","w") as f:
                 f.write(json.dumps(experiment))
 
-            print(f"\n-----Finished experiment {experiment_name} sucessfully\n-----")
+            print(f"\n-----Finished experiment {experiment_name} sucessfully-----\n")
 
         except Exception as e:
             logging.error(f"Experiment {experiment_name} resulted in error")
             logging.error(e)
             print(f"Experiment {experiment_name} resulted in error:")
-            print(e)
+            traceback.print_exc()
 
 if __name__=='__main__':
     if len(sys.argv)>1:

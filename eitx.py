@@ -966,7 +966,7 @@ def getGammaCircleLocator(radius,centerx, centery):
   return gammaLocator
 
 
-def genGammaImg(gamma,mesh_x,mesh_y,bg,ivhigh,ivlow):
+def genGammaImg(gamma,mesh_x,mesh_y,bg,ivhigh,ivlow,method='discrete'):
   cells = []
   N = mesh_x.shape[0]
   mesh = gamma.function_space.mesh
@@ -989,14 +989,16 @@ def genGammaImg(gamma,mesh_x,mesh_y,bg,ivhigh,ivlow):
   gamma_array[circle_points_index] = gamma_values.ravel()
   gamma_matrix = np.reshape(gamma_array,(N,N))
 
-  gamma_bg = np.where(np.isclose(gamma_matrix,bg),0,0)
-  gamma_ivhigh = np.where(np.isclose(gamma_matrix,ivhigh),1,0)
-  gamma_ivlow = np.where(np.isclose(gamma_matrix,ivlow),-1,0)
+  if method=='discrete':
+    gamma_bg = np.where(np.isclose(gamma_matrix,bg),0,0)
+    gamma_ivhigh = np.where(np.isclose(gamma_matrix,ivhigh),1,0)
+    gamma_ivlow = np.where(np.isclose(gamma_matrix,ivlow),-1,0)
 
 
-  img_matrix = gamma_bg + gamma_ivhigh + gamma_ivlow
-
-  return img_matrix
+    img_matrix = gamma_bg + gamma_ivhigh + gamma_ivlow
+    return img_matrix
+  elif method=='default':
+    return gamma_matrix
 
 def genPotentialImg(u,mesh_x,mesh_y,bg):
   cells = []
