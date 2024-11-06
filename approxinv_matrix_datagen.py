@@ -11,7 +11,7 @@ def main(SETTINGS_JSON):
     from petsc4py import PETSc
     print(PETSc.ScalarType)
 
-    settings = json.loads(SETTINGS_JSON)
+    settings = json.loads(SETTINGS_JSON)['data_gen']
     # settings['n_g'] = len(settings["currents"])
     datapath = settings['datapath']
 
@@ -55,9 +55,14 @@ def main(SETTINGS_JSON):
     k_list = settings['k_list']
 
     alpha_array = settings['alpha_list']
+    print("alpha_array for matrix gen:",alpha_array)
+    print("k_list for matrix gen:",k_list)
     for alpha in alpha_array:
+        print("\nStarting W_k generation")
         Wk_list = get_wk_matrices(A,b,alpha,k_list)
+        print("\nStarting b_k generation")
         bk_list = get_bk_vectors(Wk_list,b)
+        print("\nStarting x0_k generation")
         x0k_list = get_x0_vectors(A,gamma0.x.array,alpha,k_list)
         for Wk,bk,x0k,k in zip(Wk_list,bk_list,x0k_list,k_list):
             np.save(f"{datapath}/matrix/W_{k}_alpha_{alpha}",Wk)
@@ -72,7 +77,7 @@ if __name__=="__main__":
             with open(SETTINGS_JSON) as f:
                 SETTINGS_JSON = f.read()
     else:
-        SETTINGS_JSON = "settings/approxinv_settings.json"
+        SETTINGS_JSON = "experiments_settings/experiment.json"
         with open(SETTINGS_JSON) as f:
             SETTINGS_JSON = f.read()
 

@@ -48,7 +48,6 @@ def get_wk_matrices(A,b,alpha,klist):
     Wk_list = [np.zeros((n,m)) for k in klist]
 
     for i in range(n):
-        print(f"Starting generation of line {i}")
         wk_i_list = get_wk_list(A,b,alpha,i,klist)
         
         for Wk,wk_i in zip(Wk_list, wk_i_list):
