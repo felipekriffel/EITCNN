@@ -7,7 +7,9 @@ import sys
 
 def main(RESULTS_PATH):
   FILEPATH = ''
-  DATAMAT_PATH = "ifsc_data"
+  DATAMAT_PATH = "ifsc_data2/20240506"
+  bg_estimated = 0.02 # 0.3
+  rotacao = 90
   SETTINGS_PATH = RESULTS_PATH + "/data_info.json"
   with open(SETTINGS_PATH) as f:
       settings = json.loads(f.read())
@@ -28,7 +30,8 @@ def main(RESULTS_PATH):
 
 
   # Load data of background
-  mat = scipy.io.loadmat(f"{DATAMAT_PATH}/datamat/Referencia.mat")
+  mat = scipy.io.loadmat(f"{DATAMAT_PATH}/Dados/Vref.mat")
+  #mat = scipy.io.loadmat(f"{DATAMAT_PATH}/datamat/Referencia.mat")
   Uel=mat.get("signal_peak")
 
   # mat = scipy.io.loadmat("Referencia.mat")
@@ -46,10 +49,10 @@ def main(RESULTS_PATH):
   l, L=np.shape(Uel_b)  #Number of experiments, Number of Electrodes
 
   #Plot
-  fig, ax = plt.subplots(figsize=(8,5))
-  for i, U_vec in enumerate(Uel_b):
-      x=np.linspace(1,1.8,L)+i
-      ax.plot(x,U_vec, linewidth=1.3, marker='.', markersize=5);
+  #fig, ax = plt.subplots(figsize=(8,5))
+  #for i, U_vec in enumerate(Uel_b):
+  #    x=np.linspace(1,1.8,L)+i
+  #    ax.plot(x,U_vec, linewidth=1.3, marker='.', markersize=5);
 
   print(np.sum(Uel_b[0]))
   # Uel_b[0][0] = -2
@@ -60,10 +63,10 @@ def main(RESULTS_PATH):
     # Uel_b[i] -= np.sum(Uel_b[i])/L #Force a soma ser zero em cada experimento
 
   #Plot
-  fig, ax = plt.subplots(figsize=(8,5))
-  for i, U_vec in enumerate(Uel_b):
-      x=np.linspace(1,1.8,L)+i
-      ax.plot(x,U_vec, linewidth=1.3, marker='.', markersize=5);
+  #fig, ax = plt.subplots(figsize=(8,5))
+  #for i, U_vec in enumerate(Uel_b):
+  #    x=np.linspace(1,1.8,L)+i
+  #    ax.plot(x,U_vec, linewidth=1.3, marker='.', markersize=5);
 
 
   #Selecting Potentials
@@ -73,49 +76,49 @@ def main(RESULTS_PATH):
   for index, potential in enumerate(Uel_b):
       list_U0_m[index]=eitx.ConvertingData(potential, method="KIT4")
   list_U0_m = -list_U0_m #/np.max(list_U0_m)
-  list_U0=list_U0_m.flatten() #Matrix to vector
+  #list_U0=list_U0_m.flatten() #Matrix to vector
   # list_U0_m =Uel_b
 
   #Plot
-  fig, ax = plt.subplots(figsize=(8,5))
-  for i, U_vec in enumerate(list_U0_m):
-      x=np.linspace(1,1.8,L)+i
-      ax.plot(x,U_vec, linewidth=1.3, marker='.', markersize=5)
-  plt.show()
+  #fig, ax = plt.subplots(figsize=(8,5))
+  #for i, U_vec in enumerate(list_U0_m):
+  #    x=np.linspace(1,1.8,L)+i
+  #    ax.plot(x,U_vec, linewidth=1.3, marker='.', markersize=5)
+  #plt.show()
 
   #Current
-  L = settings['L']
-  n_g = settings['n_g']
-  I_all= eitx.current_method( L , n_g, method=2)          #Currents
+  # L = settings['L']
+  #n_g = settings['n_g']
+  #I_all= eitx.current_method( L , n_g, method=2)          #Currents
   # print(I_all)# MESH (For real data)
 
   "Basic Definitions"
   radius=1       #Circle radius
   # L=16           #Number of Electrodes
-  per_cober=0.5  #Percentage of area covered by electrodes
+  per_cober=0.3543  #Percentage of area covered by electrodes
   rotate= 0      #Electrodes Rotation
 
   'Return object with angular position of each electrode'
-  ele_pos = eitx.Electrodes(L, per_cober, rotate)
-  refine_n = 8     #Refinement mesh
-  n_in = 8         #Vertex on elec.
-  n_out = 2        #Vertex on gaps (Sometimes it is important.)
+  ele_pos = eitx.Electrodes(L, per_cober, rotate,anticlockwise=False)
+  #refine_n = 8     #Refinement mesh
+  #n_in = 8         #Vertex on elec.
+  #n_out = 2        #Vertex on gaps (Sometimes it is important.)
 
   # CURRENT
   'Basic Definitions'
   # z_r=np.ones(L)*0.025E-3                         #Impedance of each electrode
-  z_r=np.ones(L)*0.07858
-  z = z_r
+  # z_r=np.ones(L)*1e-3
+  z = np.ones(L)*1e-3
 
   'Mesh'
   # mesh_inverse=MyMesh(radius, refine_n, n_in, n_out, ele_pos)
   mesh_object = eitx.MeshClass(ele_pos,0.4,0.6)
-  mesh = mesh_object.mesh
+  #mesh = mesh_object.mesh
 
   ## Direct problem
   dir_problem = eitx.DirectProblem(mesh_object,z)
   V0 = dir_problem.V0   # Discontinuous Garlekin space function
-  V = dir_problem.V     # Continuous Garlekin space function
+  # V = dir_problem.V     # Continuous Garlekin space function
 
   # l=L-1                                             #Number of experiments
 
@@ -145,35 +148,40 @@ def main(RESULTS_PATH):
 
 
   "Define sigma as constant = Background"
-  bg_estimated = 0.034
   gamma0 = dolfinx.fem.Function(V0) #Define the function with basis DG
-  iv, bg= 10, 1/0.034
+  iv, bg= 10, 1/bg_estimated
   gamma0.x.array[:] = bg
 
   import tensorflow as tf
 
-  exper = [name.replace(".mat","") for name in os.listdir(DATAMAT_PATH+'/datamat')]    # experiments
+  exper = [name.replace(".mat","") for name in os.listdir(DATAMAT_PATH+'/Dados')]    # experiments
 
   n_exper = len(exper)
 
   T1 = []
   for sample in range(n_exper):
     #Load experimental data
-    mat = scipy.io.loadmat(DATAMAT_PATH+'/datamat/' +exper[sample]+".mat")
+    mat = scipy.io.loadmat(DATAMAT_PATH+'/Dados/' +exper[sample]+".mat")
     # mat = scipy.io.loadmat(exper)
     Uel=mat.get("signal_peak").T
     # CP=mat.get("CurrentPattern").T
 
     #Selecting Potentials
-    Uel_f=Uel.reshape(16,16) #Matrix of measuarements
+    Uel_f=Uel.reshape(l,L) #Matrix of measuarements
 
+    # Forces sum = 0 on each experiment
+    for i in range(0,L):
+      Uel_f[i][i] = -np.sum(Uel_f[i]) + Uel_f[i][i]
+  
     #Selecting Potentials
     list_U1_m=np.zeros_like(Uel_f)
+    # list_U1_m=Uel_f
 
     #Convert type of data
     for index, potential in enumerate(Uel_f):
         list_U1_m[index]=eitx.ConvertingData(potential, method="KIT4")
-
+    list_U1_m = -list_U1_m #/np.max(list_U1_m)
+  
     # Difference of potential
     differ = [list_U1_m[k] - list_U0_m[k] for k in range(len(list_U0_m))]
     for s in range(16):
@@ -181,6 +189,9 @@ def main(RESULTS_PATH):
     
     for i in range(len(differ)):
       differ[i] = differ[i] - np.sum(differ[i])/13
+
+    for s in range(16):
+        differ[s][ME[s]] = 0
 
     "Solve Forward Problem with Background and Difference of Potentials as Currents"
     list_ur_dif, list_U_dif = dir_problem.solve_problem_current(differ, gamma0)
@@ -213,7 +224,7 @@ def main(RESULTS_PATH):
   classes = model.predict(input_val)
   result = 0.5*np.ones((n_exper,N,N))
   for k in range(n_exper):
-    result1 = rotate(classes[k],180)
+    result1 = rotate(classes[k],rotacao)
     # result1 = classes[k]
     for i in range(N):
       for j in range(N):
@@ -227,7 +238,7 @@ def main(RESULTS_PATH):
   # plt.figure(figsize=(20, 20))
   photo_array = []
   for test in range(len(exper)):
-    img = np.asarray(Image.open(f'{DATAMAT_PATH}/target_photos/' + exper[test] + '.jpg'))
+    img = np.asarray(Image.open(f'{DATAMAT_PATH}/Fotos/' + exper[test] + '.jpg'))
     photo_array.append(img)
 
   'Plot'

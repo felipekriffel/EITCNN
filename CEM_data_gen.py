@@ -5,6 +5,7 @@ import dolfinx
 import json
 import os
 import sys
+import matplotlib.pyplot as plt
 
 def main(SETTINGS_JSON):
   # with open(SETTINGS_PATH) as f:
@@ -34,8 +35,8 @@ def main(SETTINGS_JSON):
   "Forward problem in background"
 
   #Loading data (somente para definir a corrente de maneira correta)
-  mat = sp.io.loadmat("fin_data/datamat/datamat_1_2")
-  CP = mat.get("CurrentPattern").T
+  #mat = sp.io.loadmat("fin_data/datamat/datamat_1_2")
+  #CP = mat.get("CurrentPattern").T
 
   #Current
   L = settings['L']
@@ -51,21 +52,21 @@ def main(SETTINGS_JSON):
   z=np.ones(L)*1e-3  
 
   'Return object with angular position of each electrode'
-  ele_pos = eitx.Electrodes(L, per_cober, rotate)
-  refine_n = 8     #Refinement mesh
-  n_in = 8         #Vertex on elec.
-  n_out = 2        #Vertex on gaps (Sometimes it is important.)
+  ele_pos = eitx.Electrodes(L, per_cober, rotate,anticlockwise=False)
+  #refine_n = 8     #Refinement mesh
+  #n_in = 8         #Vertex on elec.
+  #n_out = 2        #Vertex on gaps (Sometimes it is important.)
 
   'Mesh'
   # mesh_inverse=MyMesh(radius, refine_n, n_in, n_out, ele_pos)
   mesh_object = eitx.MeshClass(ele_pos,0.4,0.6)
-  mesh = mesh_object.mesh
+  #mesh = mesh_object.mesh
 
 
   ## Direct problem
   dir_problem = eitx.DirectProblem(mesh_object,z)
   V0 = dir_problem.V0   # Discontinuous Garlekin space function
-  V = dir_problem.V     # Continuous Garlekin space function
+  #V = dir_problem.V     # Continuous Garlekin space function
 
   # 'Plot'
   # eitx.plot_mesh(mesh)
@@ -79,7 +80,7 @@ def main(SETTINGS_JSON):
 
   #Solving Forward Problem
   list_u, list_U0_m = dir_problem.solve_problem_current(I_all, gamma0)
-  list_U0 = np.array(list_U0_m).flatten()
+  #list_U0 = np.array(list_U0_m).flatten()
 
   'Retangular Mesh'
   N = settings["N"]                               # grid with N*N points (works well with 0 < N < 400)
@@ -171,6 +172,16 @@ def main(SETTINGS_JSON):
       
       for i in range(differ.shape[0]):
         differ[i] = differ[i] - np.sum(differ[i])/13
+      
+      for s in range(16):
+        differ[s][ME[s]] = 0
+      #print(np.sum(differ[0]))
+
+      #'Plot'
+      #fig, ax = plt.subplots(figsize=(8,5))
+      #for w, U_vec in enumerate(differ):
+      #  zx=np.linspace(1,1.8,L) + w
+      #  ax.plot(zx,U_vec, linewidth=1.3, marker='.', markersize=5);
   
       noise = np.random.uniform(-1, 1, size=(len(differ),len(differ[0])))
       noise = noise / np.linalg.norm(noise)
