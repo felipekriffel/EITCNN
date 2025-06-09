@@ -1,5 +1,5 @@
-DIRPATH = '/home/feliperiffel/Documentos/Mestrado/EITCNN/dbar_data/data_matrix'; % substitua pelo caminho real
-SAVEPATH = 'gendata_recons';
+DIRPATH = '/home/feliperiffel/EITCNN_git/dbar_data/data_matrix'; % substitua pelo caminho real
+SAVEPATH = '/mnt/c/Users/Felipe/Documents/dbar_results/first_exp/dbar_img/';
 files = dir(fullfile(DIRPATH, '*.mat')); % você pode trocar a extensão se necessário
 
 load data/tri_index
@@ -11,7 +11,7 @@ plotFlag=false;
 printFlag=true;
 
 % Itera sobre cada arquivo
-for k = randperm(length(files))
+for k = 1:(length(files))
     filename = files(k).name;
     filepath = fullfile(DIRPATH, filename);
     
@@ -44,7 +44,7 @@ for k = randperm(length(files))
 
     dbar_img = avalia_ef_tri(p,t,recon,mx,my,tri_index);
 
-    save(['gendata_recons/' strrep(filename,".mat","_dbar.mat")],'dbar_img');
+    save('-mat7-binary',[SAVEPATH strrep(filename,".mat","_dbar.mat")],'dbar_img');
 
     % % plot results
     % if(plotFlag)
