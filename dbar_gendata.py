@@ -45,6 +45,7 @@ V = dir_problem.V     # Continuous Garlekin space function
 #"Define gamma as constant = Background"
 iv, bg= 10, 1
 ivhigh,ivlow = 10, 0.1
+p_ivhigh,p_ivlow = 0.25, 0.75
 gamma0 = dolfinx.fem.Function(V0)
 gamma0.x.array[:] = bg
 
@@ -71,12 +72,12 @@ for i in range(N):
 
 T1 = []                               # To save data
 
-DBAR_PATH = "dbar_data/"
-mat1 = scipy.io.loadmat("KIT4_measdata_dbar/dataMat_adj_1_1.mat")
+DBAR_PATH = "/mnt/c/Users/Felipe/Documents/dbar_results/mixed_cond/"
+mat1 = scipy.io.loadmat("KIT4_Dbar_recon/KIT4_measdata/dataMat_adj_1_1.mat")
 
 # Loop for generating data
 
-n_samples = [0,800,800]               # number of samples in order: 1 circle, 2 circles, 3 circles, etc.
+n_samples = [500,500,500]               # number of samples in order: 1 circle, 2 circles, 3 circles, etc.
 noise_level = 0.0                   # % of artificial noise in data
 
 nn_samples = len(n_samples)
@@ -112,11 +113,12 @@ for m in range(nn_samples):
       print('Generating sample: ' + str(sample + 1))
 
     "Generate Background + Inclusion"
-    gamma = eitx.GammaCircle(V0,iv,bg,rad_1[0,sample],center_xy[0,sample], center_xy[1,sample]) 
+    gamma = eitx.GammaCircle(V0,1,bg,0,0, 0)
     gamma_prov = gamma.x.array
-    for p in range(m):
-      ValuesCells1 = eitx.GammaCircle(V0,iv,0.0,rad_1[p+1,sample],center_xy[2*p+2,sample], center_xy[2*p+3,sample]).x.array
-      gamma_prov = np.minimum(gamma_prov + ValuesCells1, iv)
+    for p in range(m+1):
+        iv = np.random.choice([ivhigh,ivlow],p=[p_ivhigh,p_ivlow])
+        ValuesCells1 = eitx.GammaCircle(V0,iv-bg,0.0,rad_1[p,sample],center_xy[2*p,sample], center_xy[2*p+1,sample]).x.array
+        gamma_prov = gamma_prov + ValuesCells1
     gamma.x.array[:]= gamma_prov
 
     #Plot and save fig
@@ -126,8 +128,6 @@ for m in range(nn_samples):
     #Solve Forward Problem with Background + Inclusion
     list_u1, list_U1_m = dir_problem.solve_problem_current(I_all, gamma)
 
-    # np.save(DBAR_PATH+f"ground_format_potential/sample_{m+1}_{sample}",list_U1_m)
-    # np.save(DBAR_PATH+f"adjacent_format_potential/sample_{m+1}_{sample}",eitx.ConvertingData(list_U1_m,"adjacent"))
     scipy.io.savemat(DBAR_PATH+f"data_matrix/sample_{m+1}_{sample}.mat",{
       "U_ad0": np.array(list_U1_m).T,
       "U_ad10": np.array(list_U0_m).T,
@@ -139,13 +139,4 @@ for m in range(nn_samples):
     
     np.save(DBAR_PATH+f"solutions/sample_{m+1}_{sample}_img",sol_img)
     
-    # plt.imshow(sol_img,interpolation=None)
-    # plt.savefig(DBAR_PATH+f"solutions/sample_{m+1}_{sample}_img.png")
-    # scipy.io.savemat(DBAR_PATH+f"solutions/sample_{m+1}_{sample}_img.mat",{
-    #   "gamma": sol_img
-    # })
-    
   print('Generation of ' + str(m + 1) + ' circle(s) ended.')
-# np.save('EIT_Data_for_CNN', T1)
-# print('Data saved at file named: EIT_Data_for_CNN.')
-# print(np.array(T1).shape)
