@@ -2,9 +2,9 @@ import os
 import numpy as np
 import scipy as sp
 
-DBAR_DIRPATH = "/mnt/c/Users/Felipe/Documents/dbar_results/first_exp/dbar_img/"
-SOL_DIRPATH = 'dbar_data/solutions/'
-SAVEPATH = "/mnt/c/Users/Felipe/Documents/dbar_results/first_exp/unet_entries/"
+DBAR_DIRPATH = "/home/feliperiffel/Downloads/dbar_results-20250616T192024Z-1-001/dbar_results/mixed_cond/dbar_img/"
+SOL_DIRPATH = '/home/feliperiffel/Downloads/dbar_results-20250616T192024Z-1-001/dbar_results/mixed_cond/solutions/'
+SAVEPATH = "/home/feliperiffel/Downloads/dbar_results-20250616T192024Z-1-001/dbar_results/mixed_cond/unet_entries/"
 
 dbar_file_list = os.listdir(DBAR_DIRPATH)
 
