@@ -1,0 +1,9 @@
+{
+  "train_path": "/Users/alinelunkes/Desktop/Dbar-UFSC-WORK-final/EITCNN-main/dbar_data-new/train",
+  "val_path": "/Users/alinelunkes/Desktop/Dbar-UFSC-WORK-final/EITCNN-main/dbar_data-new/val",
+  "save_dir": "EIT_model_npy/",
+  "batch_size": 8,
+  "epochs": 20,
+  "learning_rate": 0.001
+}
+
