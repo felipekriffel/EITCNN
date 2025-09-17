@@ -1,0 +1,1 @@
+{"samples_dir": "DATASET/COND/EXP_1", "dsm_datapath": "DATASET/DSM/EXP_1", "currents": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], "bg": 1, "ivhigh": 10, "ivlow": 0.1, "N": 128, "noise_level": 0.0}
