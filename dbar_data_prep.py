@@ -1,17 +1,44 @@
 import os
+import sys
 import numpy as np
 import scipy as sp
+import json
 
-DBAR_DIRPATH = "/home/feliperiffel/Downloads/dbar_results-20250616T192024Z-1-001/dbar_results/mixed_cond/dbar_img/"
-SOL_DIRPATH = '/home/feliperiffel/Downloads/dbar_results-20250616T192024Z-1-001/dbar_results/mixed_cond/solutions/'
-SAVEPATH = "/home/feliperiffel/Downloads/dbar_results-20250616T192024Z-1-001/dbar_results/mixed_cond/unet_entries/"
+def main(settings):
 
-dbar_file_list = os.listdir(DBAR_DIRPATH)
+    SOL_DIRPATH = settings["dbar_input_datapath"]
+    MAT_DIRPATH = settings["dbar_mat_datapath"]
+    IMG_DIRPATH = settings["dbar_img_datapath"]
 
-for file in dbar_file_list:
-    print(DBAR_DIRPATH+file)
-    dbar_mat = sp.io.loadmat(DBAR_DIRPATH+file)
-    sol_mat = np.load(SOL_DIRPATH+file.replace("_dbar.mat","_img.npy"))
-    entry = np.array([dbar_mat['dbar_img'],sol_mat])
+    dbar_file_list = [file for file in os.listdir(MAT_DIRPATH) if not file.endswith(".json")]
 
-    np.save(SAVEPATH+file.replace("_dbar.mat",".npy"),entry)
+    with open(os.path.join(IMG_DIRPATH,"data_info.json"),"w") as f:
+        f.write(json.dumps(settings))
+
+    for file in dbar_file_list:
+        
+        sol_img = np.load(os.path.join(SOL_DIRPATH,file.replace("_dbar.mat","_img.npy")))
+
+        dbar_img = sp.io.loadmat(os.path.join(MAT_DIRPATH,file))
+
+        entry = np.array([dbar_img['dbar_img'],sol_img])
+
+        np.save(os.path.join(IMG_DIRPATH,file.replace("_dbar.mat",".npy")),entry)
+
+    print("Data converted succesfully")
+
+if __name__=="__main__":
+  if len(sys.argv)<2:
+    raise Exception("Not enough arguments. \n **Usage:** python3 dbar_data_prep.py path/to/exp_settings.json")
+
+  SETTINGS_JSON = sys.argv[1]
+  if SETTINGS_JSON.endswith('.json') and os.path.isfile(SETTINGS_JSON):
+    with open(SETTINGS_JSON) as f:
+      SETTINGS_JSON = f.read()
+
+      
+  
+  settings = json.loads(SETTINGS_JSON)
+
+
+  main(settings)

@@ -11,10 +11,10 @@ def main(SETTINGS_JSON):
 
   settings = json.loads(SETTINGS_JSON)
   
-  if not os.path.isdir(settings['dbar_mat_datapath']):
-      os.mkdir(settings['dbar_mat_datapath'])
+  if not os.path.isdir(settings['dbar_input_datapath']):
+      os.mkdir(settings['dbar_input_datapath'])
 
-  with open(settings['dbar_mat_datapath']+"/data_info.json","w") as f:
+  with open(settings['dbar_input_datapath']+"/data_info.json","w") as f:
     f.write(json.dumps(settings))
 
   "Importing modules"
@@ -29,8 +29,8 @@ def main(SETTINGS_JSON):
   #Loading kit4 data (somente para definir a corrente de maneira correta)
   mat = sp.io.loadmat("fin_data/datamat/datamat_1_2")
   CP = mat.get("CurrentPattern").T
-  DBAR_PATH = settings["dbar_mat_datapath"]
-  mat1 = sp.io.loadmat("KIT4_Dbar_recon/KIT4_measdata/dataMat_adj_1_1.mat")
+  DBAR_PATH = settings["dbar_input_datapath"]
+  mat1 = sp.io.loadmat("dbar_octave/KIT4_measdata/dataMat_adj_1_1.mat")
 
 
   #Current
@@ -105,12 +105,14 @@ def main(SETTINGS_JSON):
 
     array_U1_m += noise
 
-
-    sp.io.savemat(os.path.join(DBAR_PATH,f"{sample}_dbar_mat.mat"),{
+    sp.io.savemat(os.path.join(DBAR_PATH,sample.replace('.npy','_dbar_input.mat')),{
       "U_ad0": array_U1_m.T,
       "U_ad10": np.array(list_U0_m).T,
       "MeasPat": mat1["MeasPat"]
     })
+
+    sol_img = eitx.genGammaImg(gamma,mesh_x,mesh_y,bg,ivhigh,ivlow)
+    np.save(os.path.join(DBAR_PATH,sample.replace('.npy','_img')),sol_img)
     
   # np.save('EIT_Data_for_CNN', T1)
   print(f'Data saved at {DBAR_PATH}.')
