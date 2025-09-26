@@ -30,6 +30,12 @@ for k = 1:(length(files))
     
     % Carrega o arquivo .mat
     fprintf('Carregando: %s\n', filename);
+
+    if exist(fullfile(SAVEPATH, strrep(filename,"_input.mat",".mat")),"file")==2
+        fprintf('file exists: %s\n', fullfile(SAVEPATH, strrep(filename,"_input.mat",".mat")));
+        continue
+    end
+
     dados = load(filepath);
     %% Evaluation of data
     %Load measured data

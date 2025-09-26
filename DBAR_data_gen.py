@@ -91,7 +91,7 @@ def main(SETTINGS_JSON):
   # Loop for generating data
   noise_level = settings["noise_level"] # % of artificial noise in data
   for sample in samples_names:
-  
+    print(sample)
     gamma.x.array[:]= np.load(os.path.join(samples_dir, sample))
 
     "Define data in a homogeneus grid for training"
@@ -100,10 +100,10 @@ def main(SETTINGS_JSON):
     #Solve Forward Problem with Background + Inclusion
     list_u1, list_U1_m = dir_problem.solve_problem_current(I_all, gamma)
     array_U1_m = np.array(list_U1_m)
-    noise = np.random.uniform(-1, 1, size=(array_U1_m.shape[0],array_U1_m.shape[1]))
+    noise = np.random.uniform(-1, 1, size=array_U1_m.shape)
     noise = noise / np.linalg.norm(noise)
 
-    array_U1_m += noise
+    array_U1_m  += noise_level*noise*np.linalg.norm(array_U1_m)
 
     sp.io.savemat(os.path.join(DBAR_PATH,sample.replace('.npy','_dbar_input.mat')),{
       "U_ad0": array_U1_m.T,
