@@ -8,38 +8,32 @@ Códigos para implementação do Deep dbar. Nele, cálculamos uma imagem de EIT 
 
 Os códigos foram separados e organizados para rodar em experimentos. Salvamos as informações de cada experimento em arquivos `exp_settings.json`. Há dois tipos de configurações: `data_gen_settings` e `dbar_settings`. O primeiro, para geração dos dados de condutividade. O segundo, para geração dos dados de DBAR.
 
-```json
-data_gen_settings = {
-    "datapath": String, //diretório de armazenamento dos dados gerados
-    "L": int, //número de eletrodos
-    "bg": float, //valor da condutividade no background
-    "ivhigh": float, // valor da condutividade nas inclusões condutivas 
-    "ivlow": float, // valor da condutividade nas inclusões resistivas
-    "p_ivhigh" float, //probabilidade de selecionar uma inclusão condutiva(valor entre 0 e 1)
-    "p_ivlow": float, //probabilidade de selecionar uma inclusão resistiva
-    "n_samples": list, // número de amostras para cada número de inclusões. Exemplo [4,6,1] 4 amostras c/ 1 inclusão, 6 c/ 2 inclusões, etc. 
-    "noise_level": float //nível de ruído relativo nos dados
-}
-```
+- `data_gen_settings`:
+    - `"datapath":` `String`, diretório de armazenamento dos dados gerados
+    - `"L":` `int`, número de eletrodos
+    - `"bg":` `float`, valor da condutividade no background
+    - `"ivhigh":` `float`,  valor da condutividade nas inclusões condutivas 
+    - `"ivlow":` `float`,  valor da condutividade nas inclusões resistivas
+    - `"p_ivhigh"` `float`, probabilidade de selecionar uma inclusão condutiva(valor entre 0 e 1)
+    - `"p_ivlow":` `float`, probabilidade de selecionar uma inclusão resistiva
+    - `"n_samples":` `list`,  número de amostras para cada número de inclusões. Exemplo `[4,6,1]` 4 amostras c/ 1 inclusão, 6 c/ 2 inclusões, etc.
+    - `"noise_level":` `float` nível de ruído relativo nos dados.
 
-```json
-{
-    "samples_dir":String,//diretório com as amostras
-    "dbar_input_datapath"String,//diretório de armazenamento dos dados de potenciais e imagens de condutividade gerados
-    "dbar_mat_datapath"String,//diretório de armazenamento dos 
-    "dbar_img_datapath"String,//diretório de armazenamento das amostras juntando imagens dbar e de classificação alvo
-    "currents": list,// conjunto de correntes usadas
-    "L": int, //número de eletrodos
-    "bg": float, //valor da condutividade no background
-    "ivhigh": float, // valor da condutividade nas inclusões condutivas 
-    "ivlow": float, // valor da condutividade nas inclusões resistivas
-    "p_ivhigh" float, //probabilidade de selecionar uma inclusão condutiva(valor entre 0 e 1)
-    "p_ivlow": float, //probabilidade de selecionar uma inclusão resistiva
-    "n_samples": list, // número de amostras para cada número de inclusões. Exemplo [4,6,1] 4 amostras c/ 1 inclusão, 6 c/ 2 inclusões, etc. 
-    "noise_level": float, //nível de ruído relativo nos dados
-    "N": int //resolução N x N das imagens usadas na classificação
-}
-```
+
+`"samples_dir"`: `String`,, diretório com as amostras
+`"dbar_input_datapath"`: `String`,, diretório de armazenamento dos dados de potenciais e imagens de condutividade gerados
+`"dbar_mat_datapath"`String,, diretório de armazenamento dos 
+`"dbar_img_datapath"`String,, diretório de armazenamento das amostras juntando imagens dbar e de classificação alvo
+`"currents"`: `list`,,  conjunto de correntes usadas
+`"L"`: `int`, , número de eletrodos
+`"bg"`: `float`, , valor da condutividade no background
+`"ivhigh"`: `float`, ,  valor da condutividade nas inclusões condutivas 
+`"ivlow"`: `float`, ,  valor da condutividade nas inclusões resistivas
+`"p_ivhigh"` float, , probabilidade de selecionar uma inclusão condutiva(valor entre 0 e 1)
+`"p_ivlow"`: `float`, , probabilidade de selecionar uma inclusão resistiva
+`"n_samples"`: `list`, ,  número de amostras para cada número de inclusões. Exemplo [4,6,1] 4 amostras c/ 1 inclusão, 6 c/ 2 inclusões, etc. 
+`"noise_level"`: `float`, , nível de ruído relativo nos dados
+`"N"`: `int` , resolução N x N das imagens usadas na classificação
 
 
 ### `CEM_data_gen.py`
@@ -78,5 +72,5 @@ Executa o método dbar para uma série de amostras presentes no diretório infor
 
 Cada amostra em `path/to/data_directory` deve ser um arquivo `.mat` com as entradas:
 - `"U_ad0"`: matriz de potenciais para a condutividade que se deseja reconstruir;
-- `"U_ad10"`: matriz de potenciais para a condutividade 
+- `"U_ad10"`: matriz de potenciais para a condutividade somente com o background
 - `"MeasPat"`: padrão de potenciais medidos. 
