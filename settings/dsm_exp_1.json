@@ -5,6 +5,8 @@
     "bg": 1,
     "ivhigh": 10,
     "ivlow": 0.1,
+    "p_ivhigh": 10,
+    "p_ivlow": 0.1,
     "N":  128,
     "noise_level": 0.0   
 }
