@@ -6,6 +6,7 @@ from petsc4py import PETSc
 import json
 import os
 import sys
+from eit_image import EIT_Image
 
 def main(SETTINGS_JSON):
 
@@ -79,6 +80,8 @@ def main(SETTINGS_JSON):
       mesh_x[i][j] = x[i]
       mesh_y[i][j] = y[j]
 
+  eit_img = EIT_Image(dir_problem.mesh,mesh_x,mesh_y)
+
   gamma = dolfinx.fem.Function(V0)      # Empty function
   T1 = []                               # To save data
 
@@ -88,11 +91,17 @@ def main(SETTINGS_JSON):
   # Loop for generating data
   noise_level = settings["noise_level"] # % of artificial noise in data
   for sample in samples_names:
-  
+    if os.path.exists(os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm.npy"))):
+      print(f"{sample} dsm data already computed, skipping")
+      continue
+    else:
+      print("Computing", sample)
+        
+    
     gamma.x.array[:]= np.load(os.path.join(samples_dir, sample))
 
     "Define data in a homogeneus grid for training"
-    A = eitx.genGammaImg(gamma,mesh_x,mesh_y,bg,ivhigh,ivlow)
+    A = eit_img.genGammaImg(gamma,bg,ivhigh,ivlow,settings['img_type'])
 
     "Solve Forward Problem with Background + Inclusion"
     list_u1, list_U1_m = dir_problem.solve_problem_current(I_all, gamma)
@@ -109,14 +118,13 @@ def main(SETTINGS_JSON):
     "Saves data on tensor"
     T = np.zeros((l + 3,N,N))
     for k in range(l):
-      T[k] = eitx.genPotentialImg(list_ur_dif[k],mesh_x,mesh_y,bg)
+      T[k] = eit_img.genPotentialImg(list_ur_dif[k],0)
 
     T[l] = mesh_x
     T[l+1] = mesh_y
     T[l+2] = A
-    np.save(f"{settings['dsm_datapath']}/{sample}_dsm",T)
-
-
+    np.save(os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm")),T)
+    
   # np.save('EIT_Data_for_CNN', T1)
   print(f'Data saved at {settings["dsm_datapath"]}.')
 

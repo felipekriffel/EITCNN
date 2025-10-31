@@ -4,6 +4,7 @@ import eitx
 import os
 import json 
 import sys
+from eit_image import EIT_Image
 
 def main(RESULTS_PATH):
   FILEPATH = ''
@@ -91,6 +92,8 @@ def main(RESULTS_PATH):
       mesh_x[i][j] = x[i]
       mesh_y[i][j] = y[j]
 
+  eit_img = EIT_Image(dir_problem.mesh,mesh_x,mesh_y)
+
   "Define sigma as constant = Background"
   gamma0 = dolfinx.fem.Function(V0) #Define the function with basis DG
   iv, bg= 10, 1.2
@@ -128,7 +131,7 @@ def main(RESULTS_PATH):
     "Define data in a homogeneus grid for test"
     T = np.zeros((l + 2,N,N))
     for k in range(l):
-      T[k] = eitx.genPotentialImg(list_ur_dif[k],mesh_x,mesh_y,bg)
+      T[k] = eit_img.genPotentialImg(list_ur_dif[k],0)
 
     T[l] = mesh_x
     T[l+1] = mesh_y
