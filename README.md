@@ -4,7 +4,7 @@ Testes de redes neurais na reconstrução de imagens de Tomografia por Impedânc
 
 ## Ramo `cont`
 
-Arquivos para implementação dos testes com o método Deep-DSM no Modelo Contínuo da EIT. Basicamente, os mesmos procedimentos do ramo `main`, mas com geração de dados adapatada p.
+Arquivos para implementação dos testes com o método Deep-DSM no Modelo Contínuo da EIT. Basicamente, os mesmos procedimentos do ramo `main`, mas com geração de dados adapatada.
 
 ### `CNN_routine.py`
 
