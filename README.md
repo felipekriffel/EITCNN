@@ -2,10 +2,9 @@
 
 Testes de redes neurais na reconstrução de imagens de Tomografia por Impedância.
 
-## Ramo `main`
+## Ramo `cont`
 
-Arquivos para implementação dos testes com o método Deep-DSM.
-
+Arquivos para implementação dos testes com o método Deep-DSM no Modelo Contínuo da EIT. Basicamente, os mesmos procedimentos do ramo `main`, mas com geração de dados adapatada p.
 
 ### `CNN_routine.py`
 
@@ -19,21 +18,21 @@ Argumentos:
 - `results_path`: caminho para pasta com a rede treinada e onde o resultado do teste será salvo.
 
 
-### `CEM_data_gen.py`
+### `cont_data_gen.py`
 
 Gera dados aleatórios de condutividade, salvando os vetores de coeficientes e as informações usadas para gerar cada imagem.
 
-### `DSM_data_gen`
+### `DSM_cnn_data_gen`
 
-Gera dados com as diferenças de Cuachy para o método DSM, usando como base as condutividades previamente geradas.
+Gera dados com as diferenças de Cauchy para o método CNN-DSM, usando como base as condutividades previamente geradas.
 
 ### `CNN_test_checkpoints`
 
 Usado para treinar a UNET
 
-### `eitx.py`
+### `eit_cont.py`
 
-Arquivo com as funções usadas na implementação da Tomografia por Impedância (Modelo Completo de Eletrodos)
+Arquivo com as funções usadas na implementação da Tomografia por Impedância (Modelo Contínuo)
 
 ### `UNET_train.py`
 
