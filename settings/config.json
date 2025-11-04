@@ -1,0 +1,12 @@
+{
+    "datapath": "DATAGEN",
+    "train_path": "/home/feliperiffel/Documentos/Mestrado/EITCNN/dbar_data-new",
+    "tfrecordpath":"data",
+    "save_dir":"results/deep-dbar/",
+    "split_percentage": 0.9,
+    "dropout_prob": 0.5,
+    "batch_size" : 4,
+    "steps_per_epoch" : 20,
+    "epochs" : 10,
+    "save_period": 2
+}

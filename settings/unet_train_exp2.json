@@ -1,0 +1,11 @@
+{
+    "datapath": "DATASET_CEM/DSM/EXP_2",
+    "tfrecordpath":"data",
+    "savepath":"/home/feliperiffel/Documentos/Mestrado/Dissertação/Experimentos/Resultados/EXP_2",
+    "split_percentage": 0.9,
+    "dropout_prob": 0.5,
+    "batch_size" : 32,
+    "steps_per_epoch" : "full",
+    "epochs" : 20,
+    "save_period": 0
+}

@@ -33,7 +33,7 @@ def main(RESULTS_PATH):
       os.mkdir(RESULTS_PATH)
 
   #Selecting Potentials
-  Uel_b=Uel[-15:][currents] #Matrix of measuarements
+  Uel_b=Uel[:16][currents] #Matrix of measuarements
   print(Uel_b.shape)
 
   #Selecting Potentials
@@ -45,7 +45,7 @@ def main(RESULTS_PATH):
   list_U0=list_U0_m.flatten() #Matrix to vector
 
   #Current
-  I_all=CP[-15:][currents]/np.sqrt(2)
+  I_all=CP[:16][currents]/np.sqrt(2)
   l, L=np.shape(I_all) #Number of experiments = 15, Number of Electrodes = 16
 
   "Basic Definitions"
@@ -113,7 +113,7 @@ def main(RESULTS_PATH):
     # CP=mat.get("CurrentPattern").T
 
     #Selecting Potentials
-    Uel_f=Uel[-15:][currents] #Matrix of measuarements
+    Uel_f=Uel[:16][currents] #Matrix of measuarements
 
     #Selecting Potentials
     list_U1_m=np.zeros_like(Uel_f)
@@ -147,7 +147,7 @@ def main(RESULTS_PATH):
   #uploaded = files.upload()
 
 
-  model = keras.models.load_model(FILEPATH+MODELPATH+'unet.keras')
+  model = keras.models.load_model(os.path.join(FILEPATH,MODELPATH,'unet.keras'))
   model.summary()
 
   'Predict and prepare images to plot'
@@ -170,7 +170,7 @@ def main(RESULTS_PATH):
   # plt.figure(figsize=(20, 20))
   photo_array = []
   for test in range(len(exper)):
-    img = np.asarray(Image.open(FILEPATH+'fin_data/target_photos/fantom_' + exper[test] + '.jpg'))
+    img = np.asarray(Image.open(os.path.join(FILEPATH,'fin_data/target_photos/fantom_' + exper[test] + '.jpg')))
     photo_array.append(img)
 
   'Plot'
@@ -184,7 +184,7 @@ def main(RESULTS_PATH):
     ax[k][1].set_axis_off()
 
   fig.colorbar(img_array[0],ax=ax,orientation='vertical')
-  plt.savefig(RESULTS_PATH+'test_result.png')
+  plt.savefig(os.path.join(RESULTS_PATH,'test_result.png'))
 
 if __name__=='__main__':
    RESULTS_PATH = sys.argv[1]

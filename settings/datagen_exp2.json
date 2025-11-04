@@ -1,0 +1,12 @@
+{
+    "datapath":"DATASET_CEM/COND/EXP_2",
+    "L":16,
+    "bg": 1,
+    "ivhigh": 10,
+    "ivlow": 0.1,
+    "p_ivhigh":1.0,
+    "p_ivlow":0.0,
+    "N":  128,
+    "n_samples": [1000],
+    "noise_level": 0.0   
+}

@@ -32,7 +32,9 @@ def main(SETTINGS_JSON):
   CP = mat.get("CurrentPattern").T
 
   #Current
-  I_all=CP[-15:][settings['currents']]/np.sqrt(2)
+  I_all=CP[0:16][settings['currents']]/np.sqrt(2)
+  print('Currents:')
+  print(I_all)
   l, L=np.shape(I_all) #Number of experiments = 15, Number of Electrodes = 16
   # print(I_all)# MESH (For real data)
 
@@ -123,7 +125,7 @@ def main(SETTINGS_JSON):
     T[l] = mesh_x
     T[l+1] = mesh_y
     T[l+2] = A
-    np.save(os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm")),T)
+    np.save(os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm_cnn")),T)
     
   # np.save('EIT_Data_for_CNN', T1)
   print(f'Data saved at {settings["dsm_datapath"]}.')
