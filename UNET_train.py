@@ -38,7 +38,7 @@ def create_sample_dataset(record_file,batch_size,epochs):
     parsed_image_dataset = raw_image_dataset.map(_parse_image_function)
     parsed_image_dataset = parsed_image_dataset.map(_parse_image_tensor)
     parsed_image_dataset = parsed_image_dataset.repeat(epochs).batch(batch_size)
-    return parsed_image_dataset.prefetch(1)
+    return parsed_image_dataset.prefetch(tf.data.AUTOTUNE)
 
 def main(SETTINGS_JSON):
     # with open(SETTINGS_JSON) as f:
@@ -50,20 +50,20 @@ def main(SETTINGS_JSON):
     if not os.path.isdir(SAVEPATH):
         os.mkdir(SAVEPATH)
 
-    with open(settings['datapath']+"/data_info.json") as f:
+    with open(os.path.join(settings['datapath'],"data_info.json")) as f:
         data_settings =  json.loads(f.read())
 
-    with open(SAVEPATH+'unet_train_settings.json','w') as f:
+    with open(os.path.join(SAVEPATH,'unet_train_settings.json'),'w') as f:
         f.write(json.dumps(settings))
 
     # T1 = np.load('EIT_Data_for_CNN.npy')
-    with open(settings['tfrecordpath']+"/data_info.json") as f:
+    with open(os.path.join(settings['tfrecordpath'],"data_info.json")) as f:
         data_info = json.loads(f.read())
 
-    with open(SAVEPATH+"data_info.json","w") as f:
+    with open(os.path.join(SAVEPATH,"data_info.json"),"w") as f:
         f.write(json.dumps(data_settings))
 
-    n_g = data_settings['n_g']
+    n_g = len(data_settings['currents'])
     n_samples = data_info['n_samples']
     n_train = data_info['n_train']
     n_val = data_info['n_val']
@@ -75,6 +75,7 @@ def main(SETTINGS_JSON):
     print("Number of currents:",n_g)
     print("Number of samples:", n_samples)
     print('Number of samples for training: ' + str(n_train))
+    print('Number of samples for validation: ' + str(n_val))
 
     tfrecord_dirpath = settings['tfrecordpath']
     dataset = create_sample_dataset(tfrecord_dirpath+"/train.tfrecords", batch_size = settings['batch_size'],epochs=settings['epochs'])
@@ -88,9 +89,6 @@ def main(SETTINGS_JSON):
     unet_model.summary()
 
     'Run model'
-
-    # There are multiple optimizers, loss functions and metrics that can be used to compile multi-class segmentation models
-    # Ideally, try different options to get the best accuracy
     unet_model.compile(optimizer=tf.keras.optimizers.Adam(),
                 #loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                 loss='MeanSquaredError'
@@ -109,12 +107,13 @@ def main(SETTINGS_JSON):
 
     # Run the model in a mini-batch fashion and compute the progress for each epoch
     results = unet_model.fit(dataset,
-                    batch_size = settings["batch_size"],
-                    steps_per_epoch = steps_per_epoch,
-                    epochs = settings["epochs"],
-                    validation_data = dataset_val,
-                    verbose = 1,
-                    callbacks = [checkpoint])
+        batch_size = settings["batch_size"],
+        steps_per_epoch = steps_per_epoch,
+        epochs = settings["epochs"],
+        validation_data = dataset_val,
+        verbose = 1,
+        callbacks = [checkpoint]
+    )
 
     #-----------------------------------------------------------
     # Retrieve a list of results on training and test data
@@ -138,7 +137,7 @@ def main(SETTINGS_JSON):
     plt.plot(epochs, val_loss, 'b', label='Validation Loss')
     plt.title ('Training and validation loss'   )
     plt.legend()
-    plt.savefig(SAVEPATH+"training_graph.png")
+    plt.savefig(os.path.join(SAVEPATH,"training_graph.png"))
     plt.savefig("training_graph.png")
 
 if __name__=="__main__":
