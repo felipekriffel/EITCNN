@@ -1,11 +1,12 @@
 import math
-import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 import json
 import os
 import sys
+import tensorflow as tf
 from unet import *
+
 
 image_feature_description = {
     'height': tf.io.FixedLenFeature([], tf.int64),
@@ -39,6 +40,14 @@ def create_sample_dataset(record_file,batch_size,epochs):
     parsed_image_dataset = parsed_image_dataset.map(_parse_image_tensor)
     parsed_image_dataset = parsed_image_dataset.repeat(epochs).batch(batch_size)
     return parsed_image_dataset.prefetch(tf.data.AUTOTUNE)
+
+def create_val_dataset(record_file,batch_size):
+    raw_image_dataset = tf.data.TFRecordDataset(record_file,num_parallel_reads=tf.data.AUTOTUNE)
+    parsed_image_dataset = raw_image_dataset.map(_parse_image_function,num_parallel_calls=tf.data.AUTOTUNE)
+    parsed_image_dataset = parsed_image_dataset.map(_parse_image_tensor,num_parallel_calls=tf.data.AUTOTUNE)
+    parsed_image_dataset = parsed_image_dataset.cache().batch(batch_size)
+    return parsed_image_dataset
+
 
 def main(SETTINGS_JSON):
     # with open(SETTINGS_JSON) as f:
@@ -78,8 +87,8 @@ def main(SETTINGS_JSON):
     print('Number of samples for validation: ' + str(n_val))
 
     tfrecord_dirpath = settings['tfrecordpath']
-    dataset = create_sample_dataset(tfrecord_dirpath+"/train.tfrecords", batch_size = settings['batch_size'],epochs=settings['epochs'])
-    dataset_val = create_sample_dataset(tfrecord_dirpath+"/validation.tfrecords", batch_size = settings['batch_size'],epochs=settings['epochs'])
+    dataset = create_sample_dataset(tfrecord_dirpath+"/train.tfrecords", batch_size = settings['batch_size'],epochs=steps_per_epoch*settings['epochs'])
+    dataset_val = create_val_dataset(tfrecord_dirpath+"/validation.tfrecords", batch_size = settings['batch_size'])
 
     'Unet - Encoder block'
     'Build U-net architeture'
@@ -89,11 +98,12 @@ def main(SETTINGS_JSON):
     unet_model.summary()
 
     'Run model'
-    unet_model.compile(optimizer=tf.keras.optimizers.Adam(),
-                #loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                loss='MeanSquaredError'
-                #metrics=['accuracy']
-                )
+    unet_model.compile(optimizer=tf.keras.optimizers.Adam(
+    ),
+        #loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        loss='MeanSquaredError'
+        #metrics=['accuracy']
+    )
 
     # Setup for checkpoints
     checkpoint = tf.keras.callbacks.ModelCheckpoint(
@@ -107,7 +117,7 @@ def main(SETTINGS_JSON):
 
     # Run the model in a mini-batch fashion and compute the progress for each epoch
     results = unet_model.fit(dataset,
-        batch_size = settings["batch_size"],
+        # batch_size = settings["batch_size"],
         steps_per_epoch = steps_per_epoch,
         epochs = settings["epochs"],
         validation_data = dataset_val,
@@ -127,7 +137,7 @@ def main(SETTINGS_JSON):
     epochs   = range(len(loss)) # Get number of epochs
 
     unet_model.save('EIT_model/unet.keras')
-    unet_model.save(SAVEPATH+'unet.keras')
+    unet_model.save(os.path.join(SAVEPATH,'unet.keras'))
 
     #------------------------------------------------
     # Plot training and validation loss per epoch

@@ -86,6 +86,7 @@ def main(SETTINGS_JSON):
 
   gamma = dolfinx.fem.Function(V0)      # Empty function
   T1 = []                               # To save data
+  nan_samples = []
 
   samples_dir = settings['samples_dir']
   samples_names = [file for file in os.listdir(samples_dir) if file.endswith(".npy")]
@@ -93,7 +94,7 @@ def main(SETTINGS_JSON):
   # Loop for generating data
   noise_level = settings["noise_level"] # % of artificial noise in data
   for sample in samples_names:
-    if os.path.exists(os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm.npy"))):
+    if os.path.exists(os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm_cnn.npy"))):
       print(f"{sample} dsm data already computed, skipping")
       continue
     else:
@@ -125,10 +126,19 @@ def main(SETTINGS_JSON):
     T[l] = mesh_x
     T[l+1] = mesh_y
     T[l+2] = A
-    np.save(os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm_cnn")),T)
+
+    if np.isnan(T).any():
+      print(f"NAN at sample {sample}, skipping saving")
+      nan_samples.append(sample)
+    else:
+      np.save(os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm_cnn")),T)
     
   # np.save('EIT_Data_for_CNN', T1)
   print(f'Data saved at {settings["dsm_datapath"]}.')
+
+  if len(nan_samples)>0:
+    with open(os.path.join(settings['dsm_datapath'], "nan_samples.json"),'w') as f:
+      f.write(json.dumps(nan_samples))
 
 if __name__=="__main__":
   SETTINGS_JSON = sys.argv[1]

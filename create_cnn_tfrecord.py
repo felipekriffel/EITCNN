@@ -51,6 +51,9 @@ def main(SETTINGS_JSON):
     with tf.io.TFRecordWriter(record_file) as writer:
       for filename in paths:
         sample_array = np.load(filename)
+        if np.isnan(sample_array).any():
+          print(f"----- \n WARNING: NAN found at sample {filename}, skipping computation\n -----")
+          continue
         tf_example = image_example(sample_array)
         writer.write(tf_example.SerializeToString())
       writer.close()
