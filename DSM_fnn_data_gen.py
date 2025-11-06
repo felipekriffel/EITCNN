@@ -6,8 +6,9 @@ from petsc4py import PETSc
 import json
 import os
 import sys
-
+from eit_image import EIT_Image
 import logging
+
 logging.basicConfig(
     filename='experiments.log',
     level=logging.ERROR,
@@ -80,7 +81,7 @@ def main(SETTINGS_JSON):
             mesh_y[i][j] = y[j]
 
 
-    eit_image = eit_cont.EIT_Image(dir_problem.mesh,mesh_x,mesh_y)
+    eit_image = EIT_Image(dir_problem.mesh,mesh_x,mesh_y)
     gamma = dolfinx.fem.Function(V0)      # Empty function
     T1 = []                               # To save data
 
