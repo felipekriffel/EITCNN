@@ -23,12 +23,12 @@ def EncoderMiniBlock(inputs, n_filters=32, dropout_prob=0.3, max_pooling=True):
                 3,   # Kernel size
                 activation='relu',
                 padding='same',
-                kernel_initializer='HeNormal')(inputs)
+                kernel_initializer='he_normal')(inputs)
     conv = Conv2D(n_filters,
                 3,   # Kernel size
                 activation='relu',
                 padding='same',
-                kernel_initializer='HeNormal')(conv)
+                kernel_initializer='he_normal')(conv)
 
     # Batch Normalization will normalize the output of the last layer based on the batch's mean and standard deviation
     conv = BatchNormalization()(conv, training=False)
@@ -69,18 +69,18 @@ def DecoderMiniBlock(prev_layer_input, skip_layer_input, n_filters=32):
     # Merge the skip connection from previous block to prevent information loss
     merge = concatenate([up, skip_layer_input], axis=3)
 
-    # Add 2 Conv Layers with relu activation and HeNormal initialization for further processing
+    # Add 2 Conv Layers with relu activation and he_normal initialization for further processing
     # The parameters for the function are similar to encoder
     conv = Conv2D(n_filters,
                 3,     # Kernel size
                 activation='relu',
                 padding='same',
-                kernel_initializer='HeNormal')(merge)
+                kernel_initializer='he_normal')(merge)
     conv = Conv2D(n_filters,
                 3,   # Kernel size
                 activation='relu',
                 padding='same',
-                kernel_initializer='HeNormal')(conv)
+                kernel_initializer='he_normal')(conv)
     return conv
 
 'Compile U-net Blocks'
@@ -118,7 +118,7 @@ def UNetCompiled(input_size=(100,100,3),n_filters=32, n_classes=3,dropout=0.3):
                     padding='same',
                     kernel_initializer='he_normal')(ublock9)
 
-    conv10 = Conv2D(n_classes, 1, padding='same')(conv9)
+    conv10 = Conv2D(n_classes, 1, padding='same',kernel_initializer='he_normal',activation='sigmoid')(conv9)
 
     # Define the model
     model = Model(inputs=inputs, outputs=conv10)

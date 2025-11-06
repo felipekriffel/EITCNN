@@ -7,6 +7,7 @@ import json
 import os
 import sys
 from eit_image import EIT_Image
+from matplotlib import pyplot as plt
 
 def main(SETTINGS_JSON):
 
@@ -86,15 +87,24 @@ def main(SETTINGS_JSON):
 
   gamma = dolfinx.fem.Function(V0)      # Empty function
   T1 = []                               # To save data
-  nan_samples = []
 
   samples_dir = settings['samples_dir']
   samples_names = [file for file in os.listdir(samples_dir) if file.endswith(".npy")]
 
+  nan_samples_path = os.path.join(samples_dir,"nan_samples.json")
+  if os.path.exists(nan_samples_path):
+    with open(nan_samples_path,'r') as f:
+      saved_nan = json.loads(f.read())
+    nan_samples = saved_nan
+  else:
+    nan_samples = []
+    
+
   # Loop for generating data
   noise_level = settings["noise_level"] # % of artificial noise in data
   for sample in samples_names:
-    if os.path.exists(os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm_cnn.npy"))):
+    sample_path = os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm_cnn.npy"))
+    if os.path.exists(sample_path) and sample_path not in nan_samples:
       print(f"{sample} dsm data already computed, skipping")
       continue
     else:
@@ -129,7 +139,8 @@ def main(SETTINGS_JSON):
 
     if np.isnan(T).any():
       print(f"NAN at sample {sample}, skipping saving")
-      nan_samples.append(sample)
+      if sample not in nan_samples:
+        nan_samples.append(sample)
     else:
       np.save(os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm_cnn")),T)
     
