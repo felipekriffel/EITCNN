@@ -8,9 +8,12 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
 
-def DenseBlock(input, n_neurons,dropout=0.3):
+def DenseBlock(input, n_neurons,dropout=None):
     A1 = tf.keras.layers.Dense(n_neurons,activation="relu")(input)
     A2 = tf.keras.layers.Dense(n_neurons,activation="relu")(A1)
+    if dropout:
+        A2 = tf.keras.layers.Dropout(dropout)(A2)
+        
     residual = tf.keras.layers.add([input,A2])
 
     return residual

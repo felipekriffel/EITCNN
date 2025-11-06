@@ -12,6 +12,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import sys
+import logging
+
+logging.basicConfig(
+    filename='experiments.log',
+    level=logging.ERROR,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 def main(SETTINGS_JSON):
     # with open(SETTINGS_PATH) as f:
@@ -125,7 +132,7 @@ def main(SETTINGS_JSON):
 
             np.save(f"{settings['datapath']}/sample_{n_circles+1}_{sample}",gamma_prov) #Salva array de coeficientes
             samples_info.append(sample_data)
-            print('Generation of ' + str(n_circles + 1) + ' circle(s) ended.')
+        print('Generation of ' + str(n_circles + 1) + ' circle(s) ended.')
 
     with open(os.path.join(settings['datapath'],"samples_info.json"),"w") as f:
         f.write(json.dumps(samples_info))
@@ -136,4 +143,9 @@ if __name__=="__main__":
     if SETTINGS_JSON.endswith('.json') and os.path.isfile(SETTINGS_JSON):
         with open(SETTINGS_JSON) as f:
             SETTINGS_JSON = f.read()
-    main(SETTINGS_JSON)
+
+    try:
+        main(SETTINGS_JSON)
+    except Exception as e:
+        logging.error(f"Data generation failed calling {sys.argv[1]} config file")
+        logging.error(e)

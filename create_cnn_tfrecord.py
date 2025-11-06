@@ -4,6 +4,13 @@ import os
 import sys
 import math
 import json
+import logging
+
+logging.basicConfig(
+    filename='experiments.log',
+    level=logging.ERROR,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 def main(SETTINGS_JSON):
   # with open(SETTINGS_PATH) as f: 
@@ -51,18 +58,22 @@ def main(SETTINGS_JSON):
     with tf.io.TFRecordWriter(record_file) as writer:
       for filename in paths:
         sample_array = np.load(filename)
+        if np.isnan(sample_array).any():
+          print(f"----- \n WARNING: NAN found at sample {filename}, skipping computation\n -----")
+          continue
         tf_example = image_example(sample_array)
         writer.write(tf_example.SerializeToString())
       writer.close()
 
-  feature_paths = [DATAPATH+'/'+x for x in os.listdir(DATAPATH) if x!="data_info.json"]
+  feature_paths = [os.path.join(DATAPATH,x) for x in os.listdir(DATAPATH) if x.endswith("dsm_cnn.npy")]
 
   per = settings['split_percentage']
 
   n_samples = len(feature_paths)
   n_train = math.floor(n_samples*per)    # number samples for training
-  print('Number of samples for training: ' + str(n_train))
+  print('Number of samples for training: ', n_train)
   n_val = n_samples - n_train        # number of samples for validation
+  print('Number of samples for validation: ', n_val)
 
   # permute the lines
   perm = np.random.permutation(n_samples)
@@ -74,10 +85,11 @@ def main(SETTINGS_JSON):
   create_tfrecord(SAVEPATH+"/train.tfrecords",paths_division)
   create_tfrecord(SAVEPATH+"/validation.tfrecords",paths_division2)
 
-  data_info = {
+  data_info = { 
     "n_samples": n_samples,
     "n_train": n_train,
-    "n_val": n_val
+    "n_val": n_val,
+    "n_g": 1
   }
 
   with open(SAVEPATH+"/data_info.json",'w') as f:
@@ -90,5 +102,8 @@ if __name__=='__main__':
   if SETTINGS_JSON.endswith('.json') and os.path.isfile(SETTINGS_JSON):
     with open(SETTINGS_JSON) as f:
       SETTINGS_JSON = f.read()
-
-  main(SETTINGS_JSON)
+  try:
+    main(SETTINGS_JSON)
+  except Exception as e:
+    logging.error(f"Create tfrecord failed calling {sys.argv[1]} config file")
+    logging.error(e)

@@ -1,6 +1,6 @@
 import numpy as np
 import dolfinx
-from eitx import getGammaCircleLocator
+from eit_cont import getGammaCircleLocator
 
 class EIT_Image():
     def __init__(self, dolfin_mesh, mesh_x, mesh_y):

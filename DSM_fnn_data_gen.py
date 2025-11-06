@@ -6,15 +6,13 @@ from petsc4py import PETSc
 import json
 import os
 import sys
-from eit_image import EIT_Image
-import logging
 
+import logging
 logging.basicConfig(
     filename='experiments.log',
     level=logging.ERROR,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
-
 
 def main(SETTINGS_JSON):
     settings = json.loads(SETTINGS_JSON)
@@ -26,6 +24,7 @@ def main(SETTINGS_JSON):
         f.write(json.dumps(settings))
 
     "Importing modules"
+    import logging
     # Set the logging level to suppress most logs
     logging.getLogger('UFL_LEGACY').setLevel(logging.WARNING)
     logging.getLogger('dolfin').setLevel(logging.WARNING)
@@ -46,6 +45,8 @@ def main(SETTINGS_JSON):
     'Mesh'
     # mesh_inverse=MyMesh(radius, refine_n, n_in, n_out, ele_pos)
     mesh_object = eit_cont.MeshClass(ele_pos,0.3,0.4)
+    mesh = mesh_object.mesh
+
 
     ## Direct problem
     dir_problem = eit_cont.DirectProblem(mesh_object)
@@ -59,7 +60,6 @@ def main(SETTINGS_JSON):
     gamma0.x.array[:] = bg
 
     current_list = dir_problem.get_current_list(settings["n_currents"])
-    
     n_currents = len(current_list)
 
     #Solving Forward Problem
@@ -79,19 +79,29 @@ def main(SETTINGS_JSON):
             mesh_x[i][j] = x[i]
             mesh_y[i][j] = y[j]
 
-    eit_image = EIT_Image(dir_problem.mesh,mesh_x,mesh_y)
 
+    eit_image = eit_cont.EIT_Image(dir_problem.mesh,mesh_x,mesh_y)
     gamma = dolfinx.fem.Function(V0)      # Empty function
     T1 = []                               # To save data
 
+    # gradient empty functions
+    delx_phi = dolfinx.fem.Function(V0)
+    dely_phi = dolfinx.fem.Function(V0)
+
     samples_dir = settings['samples_dir']
     samples_names = [file for file in os.listdir(samples_dir) if file.endswith(".npy")]
-    nan_samples = []
 
     # Loop for generating data
     noise_level = settings["noise_level"] # % of artificial noise in data
     for sample in samples_names:
-        print(sample)
+
+        if os.path.exists(os.path.join(settings['dsm_datapath'],sample.replace(".npy",f"_dsm_fnn.npy"))):
+            print(f"{sample} dsm data already computed, skipping")
+            continue
+        else:
+            print("Computing", sample)
+
+        
         gamma.x.array[:]= np.load(os.path.join(samples_dir, sample))
 
         "Define data in a homogeneus grid for training"
@@ -101,53 +111,66 @@ def main(SETTINGS_JSON):
         list_u1 = dir_problem.solve_problem_current(current_list, gamma)
 
         "Difference of Resulting Potentials"
-        differ_list = [dolfinx.fem.Function(V) for i in range(n_currents)]
-
+        differ_list = []
         differ_noisy = dolfinx.fem.Function(V)
         for k in range(n_currents):
-
+            
             differ_array = list_u1[k].x.array - list_u0[k].x.array
             differ_noisy.x.array[:] = differ_array
 
             noise = np.random.uniform(-1, 1, size=(len(differ_array)))
             noise = noise / np.linalg.norm(noise)
-        
-            differ_list[k].x.array[:] = differ_array + noise_level*noise*eit_cont.bdrNorm(differ_noisy)
+            differ_noisy.x.array[:] = differ_array + noise_level*noise*eit_cont.bdrNorm(differ_noisy)
+
+            differ_list.append(differ_noisy)
 
         "Solve Forward Problem with Background and Difference of Potentials as Currents"
-        list_ur_dif = dir_problem.solve_problem_current(differ_list, gamma0)
+        list_phi = dir_problem.solve_problem_current(differ_list, gamma0)
 
-        "Saves data on tensor"
-        T = np.zeros((n_currents + 3,N,N))
+        list_delx_phi = []
+        list_dely_phi = []
+
+
         for k in range(n_currents):
-            T[k] = eit_image.genPotentialImg(list_ur_dif[k])
+            
+            gradphi_array = dir_problem.compute_gradient(list_phi[k])
 
-        T[n_currents] = mesh_x
-        T[n_currents+1] = mesh_y
-        T[n_currents+2] = gamma_img
+            delx_phi.x.array[:] = gradphi_array[:,0]
+            dely_phi.x.array[:] = gradphi_array[:,1]
 
-        if np.isnan(T).any():
-            print(f"NAN at sample {sample}, skipping saving")
-            nan_samples.append(sample)
-        else:
-            np.save(os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm_cnn")),T)
-        np.save(os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm")),T)
-        
-    # np.save('EIT_Data_for_CNN', T1)
+            delx_img = eit_image.genPotentialImg(delx_phi)
+            dely_img = eit_image.genPotentialImg(dely_phi)
+
+            list_delx_phi.append(delx_img)
+            list_dely_phi.append(dely_img)
+
+
+        T = np.zeros((2*n_currents + 3,N,N))
+        T[0] = mesh_x
+        T[1] = mesh_y
+        for k in range(n_currents):
+            T[2+2*k] = list_delx_phi[k]
+            T[2+2*k+1] = list_dely_phi[k]        
+        T[-1] = gamma_img
+
+        vec_list = []
+        for i in range(128):
+            for j in range(128):
+                if T[0,i,j]**2 + T[1,i,j]**2 < 1:    
+                    vec_list.append(T[:,i,j])
+
+        np.save(os.path.join(settings['dsm_datapath'],sample.replace(".npy",f"_dsm_fnn")),vec_list)
+
     print(f'Data saved at {settings["dsm_datapath"]}.')
-
-    if len(nan_samples)>0:
-        with open(os.path.join(settings['dsm_datapath'], "nan_samples.json"),'w') as f:
-            f.write(json.dumps(nan_samples))
 
 if __name__=="__main__":
     SETTINGS_JSON = sys.argv[1]
     if SETTINGS_JSON.endswith('.json') and os.path.isfile(SETTINGS_JSON):
         with open(SETTINGS_JSON) as f:
             SETTINGS_JSON = f.read()
-
+    
     try:
         main(SETTINGS_JSON)
     except Exception as e:
-        logging.error(f"DSM-CNN data gen failed calling {sys.argv[1]} config file")
+        logging.error(f"DSM fnn datagen failed calling {sys.argv[1]} config file")
         logging.error(e)

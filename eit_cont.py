@@ -985,6 +985,17 @@ def funcProduct(u,v):
 def funcSquareNorm(u):
     return dolfinx.fem.assemble_scalar(dolfinx.fem.form(ufl.inner(u,u) * ufl.dx))
 
+def bdrProduct(u,v):
+    product = dolfinx.fem.assemble_scalar(dolfinx.fem.form(ufl.inner(u,v) * ufl.ds))
+    return product
+
+def bdrNorm(u):
+    product = np.sqrt(
+        dolfinx.fem.assemble_scalar(dolfinx.fem.form(ufl.inner(u,u) * ufl.ds))
+    )
+    return product
+
+
 def ConvertingData(U,method):
     """
     Convert data from different measurement patterns to the ground pattern.
