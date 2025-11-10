@@ -5,6 +5,13 @@ import os
 import json 
 import sys
 from eit_image import EIT_Image
+import logging
+
+logging.basicConfig(
+    filename='experiments.log',
+    level=logging.ERROR,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 def main(RESULTS_PATH):
   FILEPATH = ''
@@ -187,5 +194,10 @@ def main(RESULTS_PATH):
   plt.savefig(os.path.join(RESULTS_PATH,'test_result.png'))
 
 if __name__=='__main__':
-   RESULTS_PATH = sys.argv[1]
-   main(RESULTS_PATH)
+  RESULTS_PATH = sys.argv[1]
+   
+  try:
+    main(RESULTS_PATH)
+  except Exception as e:
+    logging.error(f"DSM fnn datagen failed calling {sys.argv[1]} config file")
+    logging.error(e)
