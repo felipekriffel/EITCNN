@@ -35,9 +35,9 @@ def _parse_image_tensor(image_features):
 
 
 def create_sample_dataset(record_file,batch_size,epochs):
-    raw_image_dataset = tf.data.TFRecordDataset(record_file)
-    parsed_image_dataset = raw_image_dataset.map(_parse_image_function)
-    parsed_image_dataset = parsed_image_dataset.map(_parse_image_tensor)
+    raw_image_dataset = tf.data.TFRecordDataset(record_file,num_parallel_reads=tf.data.AUTOTUNE)
+    parsed_image_dataset = raw_image_dataset.map(_parse_image_function,num_parallel_calls=tf.data.AUTOTUNE)
+    parsed_image_dataset = parsed_image_dataset.map(_parse_image_tensor,num_parallel_calls=tf.data.AUTOTUNE)
     parsed_image_dataset = parsed_image_dataset.repeat(epochs).batch(batch_size)
     return parsed_image_dataset.prefetch(tf.data.AUTOTUNE)
 

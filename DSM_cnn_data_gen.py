@@ -8,6 +8,13 @@ import os
 import sys
 from eit_image import EIT_Image
 from matplotlib import pyplot as plt
+import logging
+
+logging.basicConfig(
+    filename='experiments.log',
+    level=logging.ERROR,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 def main(SETTINGS_JSON):
 
@@ -157,4 +164,8 @@ if __name__=="__main__":
     with open(SETTINGS_JSON) as f:
       SETTINGS_JSON = f.read()
       
-  main(SETTINGS_JSON)
+  try:
+    main(SETTINGS_JSON)
+  except Exception as e:
+    logging.error(f"DSM fnn datagen failed calling {sys.argv[1]} config file")
+    logging.error(e)
