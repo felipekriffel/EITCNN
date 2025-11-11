@@ -97,8 +97,6 @@ def main(RESULTS_PATH):
         gamma.x.array[:] = gamma_array
         gammaimg_list.append(eit_image.genGammaImg(gamma,bg,ivhigh,ivlow))
 
-        eit_cont.plot_indicator_function(gamma)
-
         list_u1 = dir_problem.solve_problem_current(current_list, gamma)
 
         "Difference of Resulting Potentials"
@@ -143,7 +141,7 @@ def main(RESULTS_PATH):
     fig, ax = plt.subplots(2,classes.shape[0],figsize=(40,10))
     img_array = []
     for k in range(classes.shape[0]):
-        img_array.append(ax[0][k].imshow(classes[k]))
+        img_array.append(ax[0][k].imshow(classes[k,:,:,0].T))
         ax[0][k].set_axis_off()
         
         ax[1][k].imshow(gammaimg_list[k])
