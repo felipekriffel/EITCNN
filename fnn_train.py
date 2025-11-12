@@ -151,7 +151,6 @@ def main(SETTINGS_JSON):
     plt.savefig("fnn_training_graph.png")
 
 if __name__=="__main__":
-#   SETTINGS_JSON = 'unet_train_settings.json'
     SETTINGS_JSON = sys.argv[1]
     if SETTINGS_JSON.endswith('.json') and os.path.isfile(SETTINGS_JSON):
         with open(SETTINGS_JSON) as f:
