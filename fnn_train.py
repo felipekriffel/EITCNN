@@ -6,6 +6,8 @@ import sys
 import tensorflow as tf
 from fnn import *
 import logging
+import traceback 
+
 logging.basicConfig(
     filename='experiments.log',
     level=logging.ERROR,
@@ -159,4 +161,5 @@ if __name__=="__main__":
         main(SETTINGS_JSON)
     except Exception as e:
         logging.error(f"Fnn train failed calling {sys.argv[1]} config file")
-        logging.error(e)
+        print(traceback.format_exc())
+        logging.error(traceback.format_exc())

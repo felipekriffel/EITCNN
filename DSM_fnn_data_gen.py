@@ -8,6 +8,7 @@ import os
 import sys
 from eit_image import EIT_Image
 import logging
+import traceback
 
 logging.basicConfig(
     filename='experiments.log',
@@ -60,8 +61,11 @@ def main(SETTINGS_JSON):
     gamma0 = dolfinx.fem.Function(V0)
     gamma0.x.array[:] = bg
 
+    currents_index = settings["currents"]
+    n_currents = max(currents_index)+1
     current_list = dir_problem.get_current_list(settings["n_currents"])
-    n_currents = len(current_list)
+    current_list = [current_list[i] for i in currents_index]
+
 
     #Solving Forward Problem
     list_u0 = dir_problem.solve_problem_current(current_list, gamma0)
@@ -155,8 +159,8 @@ def main(SETTINGS_JSON):
         T[-1] = gamma_img
 
         vec_list = []
-        for i in range(128):
-            for j in range(128):
+        for i in range(N):
+            for j in range(N):
                 if T[0,i,j]**2 + T[1,i,j]**2 < 1:    
                     vec_list.append(T[:,i,j])
 
@@ -174,4 +178,5 @@ if __name__=="__main__":
         main(SETTINGS_JSON)
     except Exception as e:
         logging.error(f"DSM fnn datagen failed calling {sys.argv[1]} config file")
-        logging.error(e)
+        logging.error(traceback.format_exc())
+        print(traceback.format_exc())

@@ -11,6 +11,8 @@ import numpy as np
 import scipy
 import tensorflow as tf
 import logging
+import traceback
+from unet import UNetCompiled
 
 logging.basicConfig(
     filename='experiments.log',
@@ -25,12 +27,12 @@ def main(RESULTS_PATH):
     with open(SETTINGS_PATH) as f:
         settings = json.loads(f.read())
 
-    currents = settings['currents']
     MODELPATH = RESULTS_PATH
 
     if not os.path.isdir(RESULTS_PATH):
        os.mkdir(RESULTS_PATH)
 
+    test_path = "cont_test_samples/"
 
     "Forward problem in background"
     L=20
@@ -59,7 +61,14 @@ def main(RESULTS_PATH):
     gamma0 = dolfinx.fem.Function(V0)
     gamma0.x.array[:] = bg
 
-    current_list = dir_problem.get_current_list(settings["n_currents"])
+    current_index = settings['currents']
+    max_current_index = max(current_index)+1
+
+    print("Current index", current_index)
+    print("n currents", max_current_index)
+
+    current_list = dir_problem.get_current_list(max_current_index)
+    current_list = [current_list[i] for i in current_index]
     n_currents = len(current_list)
 
     #Solving Forward Problem
@@ -85,17 +94,20 @@ def main(RESULTS_PATH):
 
     eit_img = EIT_Image(dir_problem.mesh,mesh_x,mesh_y)
 
-    cond_dir = [file for file in os.listdir(settings['samples_dir']) if file.endswith(".npy")]
+    cond_dir = [file for file in os.listdir(test_path) if file.endswith(".npy")]
 
     T1 = []
 
     gammaimg_list = []
 
-    for sample in cond_dir[:6]:
+    for sample in cond_dir:
         #Load experimental data
-        gamma_array = np.load(os.path.join(settings['samples_dir'],sample))
+        gamma_array = np.load(os.path.join(test_path,sample))
         gamma.x.array[:] = gamma_array
-        gammaimg_list.append(eit_image.genGammaImg(gamma,bg,ivhigh,ivlow))
+        # gammaimg_list.append(eit_image.genGammaImg(gamma,bg,ivhigh,ivlow))
+        gammaimg_list.append(eit_image.genGammaImg(gamma,bg,ivhigh,ivlow,type='seg'))
+
+        # gammaimg_list.append(np.asarray(Image.open(os.path.join(test_path,sample.replace('.npy','.png')))))
 
         list_u1 = dir_problem.solve_problem_current(current_list, gamma)
 
@@ -129,8 +141,9 @@ def main(RESULTS_PATH):
 
         T1.append(np.transpose(T))
 
+    np.save(os.path.join(test_path,'model_input'),T1)
+    np.save(os.path.join(test_path,'gamma_img'),gammaimg_list)
     input_val = tf.convert_to_tensor(T1)
-
 
     model = tf.keras.models.load_model(os.path.join(MODELPATH,'unet.keras'))
 
@@ -143,9 +156,12 @@ def main(RESULTS_PATH):
     for k in range(classes.shape[0]):
         img_array.append(ax[0][k].imshow(classes[k,:,:,0].T))
         ax[0][k].set_axis_off()
-        
-        ax[1][k].imshow(gammaimg_list[k])
-    fig.colorbar(img_array[0],ax=ax,orientation='vertical')
+        img_array.append(ax[1][k].imshow(gammaimg_list[k],vmin=-1.0,vmax=1.0))
+        ax[1][k].set_axis_off()
+
+    fig.colorbar(img_array[0],ax=ax[0,:],orientation='vertical')
+    fig.colorbar(img_array[-1],ax=ax[1,:],orientation='vertical')
+
     plt.savefig(os.path.join(RESULTS_PATH,'test_result.png'))
 
 if __name__=='__main__':
@@ -156,6 +172,6 @@ if __name__=='__main__':
     except Exception as e:    
         msg = f"Unet test failed calling {sys.argv[1]} config file"
         print(msg)
-        print(e)
-        logging.error(msg)
-        logging.error(e)
+        # print(e)
+        print(traceback.format_exc())
+        logging.error(traceback.format_exc())

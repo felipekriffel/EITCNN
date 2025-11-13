@@ -32,6 +32,7 @@ def main(RESULTS_PATH):
     if not os.path.isdir(RESULTS_PATH):
        os.mkdir(RESULTS_PATH)
 
+    test_path = "cont_test_samples/"
 
     "Forward problem in background"
     L=20
@@ -63,7 +64,14 @@ def main(RESULTS_PATH):
     delx_phi = dolfinx.fem.Function(V0)
     dely_phi = dolfinx.fem.Function(V0)
 
-    current_list = dir_problem.get_current_list(settings["n_currents"])
+    current_index = settings['currents']
+    max_current_index = max(current_index)+1
+
+    print("Current index", current_index)
+    print("n currents", max_current_index)
+
+    current_list = dir_problem.get_current_list(max_current_index)
+    current_list = [current_list[i] for i in current_index]
     n_currents = len(current_list)
 
     #Solving Forward Problem
@@ -87,17 +95,17 @@ def main(RESULTS_PATH):
     gamma = dolfinx.fem.Function(V0)      # Empty function
     input_list = []                               # To save data
 
-    eit_img = EIT_Image(dir_problem.mesh,mesh_x,mesh_y)
-
-    cond_dir = [file for file in os.listdir(settings['samples_dir']) if file.endswith(".npy")]
+    cond_dir = [file for file in os.listdir(test_path) if file.endswith(".npy")]
 
     gammaimg_list = []
 
-    for sample in cond_dir[:6]:
+    for sample in cond_dir:
         #Load experimental data
-        gamma_array = np.load(os.path.join(settings['samples_dir'],sample))
+        gamma_array = np.load(os.path.join(test_path,sample))
         gamma.x.array[:] = gamma_array
-        gammaimg_list.append(eit_image.genGammaImg(gamma,bg,ivhigh,ivlow))
+        # gammaimg_list.append(eit_image.genGammaImg(gamma,bg,ivhigh,ivlow))
+        gammaimg_list.append(eit_image.genGammaImg(gamma,bg,ivhigh,ivlow,type='seg'))
+
 
         list_u1 = dir_problem.solve_problem_current(current_list, gamma)
 
@@ -154,10 +162,7 @@ def main(RESULTS_PATH):
 
         input_list.append(vec_list)
 
-
-
     model = tf.keras.models.load_model(os.path.join(MODELPATH,'fnn.keras'))
-
     
     'Plot'
     fig, ax = plt.subplots(2,len(input_list),figsize=(40,10))
@@ -173,9 +178,12 @@ def main(RESULTS_PATH):
 
         img_array.append(ax[0][k].imshow(pred_img))
         ax[0][k].set_axis_off()
-        ax[1][k].imshow(gammaimg_list[k])
+        
+        img_array.append(ax[1][k].imshow(gammaimg_list[k],vmin=-1.0,vmax=1.0))
+        ax[1][k].set_axis_off()
 
-    fig.colorbar(img_array[0],ax=ax,orientation='vertical')
+    fig.colorbar(img_array[0],ax=ax[0,:],orientation='vertical')
+    fig.colorbar(img_array[-1],ax=ax[1,:],orientation='vertical')
     plt.savefig(os.path.join(RESULTS_PATH,'test_result.png'))
 
 if __name__=='__main__':
@@ -188,5 +196,4 @@ if __name__=='__main__':
         print(msg)
         # print(e)
         print(traceback.format_exc())
-        logging.error(msg)
         logging.error(traceback.format_exc())
