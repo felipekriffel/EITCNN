@@ -78,7 +78,7 @@ def main(RESULTS_PATH):
     list_u0 = dir_problem.solve_problem_current(current_list, gamma0)
 
     'Retangular Mesh'
-    N = settings["N"]                     # grid with N*N points (works well with 0 < N < 400)
+    N = 128                 # grid with N*N points (works well with 0 < N < 400)
     h = 2*radius/(N-1)                    # step size
     x = [radius - i*h for i in range(N)]  # x grid points
     y = [-radius + i*h for i in range(N)] # y grid points

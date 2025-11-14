@@ -58,6 +58,7 @@ def main(RESULTS_PATH):
     #"Define gamma as constant = Background"
     bg = settings['bg']
     ivhigh,ivlow = settings['ivhigh'], settings['ivlow']
+    noise_level = settings['noise_level']
     gamma0 = dolfinx.fem.Function(V0)
     gamma0.x.array[:] = bg
 
@@ -120,11 +121,11 @@ def main(RESULTS_PATH):
             differ_array = list_u1[k].x.array - list_u0[k].x.array
             differ_noisy.x.array[:] = differ_array
 
-            # noise = np.random.uniform(-1, 1, size=(len(differ_array)))
-            # noise = noise / np.linalg.norm(noise)
-            # differ_noisy.x.array[:] = differ_array + noise_level*noise*eit_cont.bdrNorm(differ_noisy)
+            noise = np.random.uniform(-1, 1, size=(len(differ_array)))
+            noise = noise / np.linalg.norm(noise)
+            differ_noisy.x.array[:] = differ_array + noise_level*noise*eit_cont.bdrNorm(differ_noisy)
 
-            # differ_list.append(differ_noisy)
+            differ_list.append(differ_noisy)
             differ_list[k].x.array[:] = differ_array
 
             

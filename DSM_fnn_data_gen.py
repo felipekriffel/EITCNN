@@ -49,7 +49,6 @@ def main(SETTINGS_JSON):
     mesh_object = eit_cont.MeshClass(ele_pos,0.3,0.4)
     mesh = mesh_object.mesh
 
-
     ## Direct problem
     dir_problem = eit_cont.DirectProblem(mesh_object)
     V0 = dir_problem.V0   # Discontinuous Garlekin space function
@@ -61,11 +60,15 @@ def main(SETTINGS_JSON):
     gamma0 = dolfinx.fem.Function(V0)
     gamma0.x.array[:] = bg
 
-    currents_index = settings["currents"]
-    n_currents = max(currents_index)+1
-    current_list = dir_problem.get_current_list(settings["n_currents"])
-    current_list = [current_list[i] for i in currents_index]
+    current_index = settings['currents']
+    max_current_index = max(current_index)+1
 
+    print("Current index", current_index)
+    print("n currents", max_current_index)
+
+    current_list = dir_problem.get_current_list(max_current_index)
+    current_list = [current_list[i] for i in current_index]
+    n_currents = len(current_list)
 
     #Solving Forward Problem
     list_u0 = dir_problem.solve_problem_current(current_list, gamma0)
@@ -96,6 +99,14 @@ def main(SETTINGS_JSON):
     samples_dir = settings['samples_dir']
     samples_names = [file for file in os.listdir(samples_dir) if file.endswith(".npy")]
 
+    print(settings)
+
+    if 'phi_datapath' in settings:
+        phidir_path = settings['phi_datapath']
+        phi_files_list = [file for file in os.listdir(phidir_path) if file.endswith("_dsm_phi.npy")]
+    else:
+        phi_files_list = []
+
     # Loop for generating data
     noise_level = settings["noise_level"] # % of artificial noise in data
 
@@ -115,38 +126,43 @@ def main(SETTINGS_JSON):
         else:
             print("Computing", sample)
 
-        
+                
         gamma.x.array[:]= np.load(os.path.join(samples_dir, sample))
 
         "Define data in a homogeneus grid for training"
         gamma_img = eit_image.genGammaImg(gamma,bg,ivhigh,ivlow,type='bin')
+        
+        if sample.replace(".npy","_dsm_phi.npy") in phi_files_list:
+            phi_array = np.load(os.path.join(phidir_path,sample.replace(".npy","_dsm_phi.npy")))
+            list_phi = []
+            for i in range(n_currents):
+                list_phi.append(dolfinx.fem.Function(V))
+                list_phi[-1].x.array[:] = phi_array[i]
+        else:
+            "Solve Forward Problem with Background + Inclusion"
+            list_u1 = dir_problem.solve_problem_current(current_list, gamma)
 
-        "Solve Forward Problem with Background + Inclusion"
-        list_u1 = dir_problem.solve_problem_current(current_list, gamma)
+            "Difference of Resulting Potentials"
+            differ_list = []
+            differ_noisy = dolfinx.fem.Function(V)
+            for k in range(n_currents):
+                
+                differ_array = list_u1[k].x.array - list_u0[k].x.array
+                differ_noisy.x.array[:] = differ_array
 
-        "Difference of Resulting Potentials"
-        differ_list = []
-        differ_noisy = dolfinx.fem.Function(V)
-        for k in range(n_currents):
-            
-            differ_array = list_u1[k].x.array - list_u0[k].x.array
-            differ_noisy.x.array[:] = differ_array
+                noise = np.random.uniform(-1, 1, size=(len(differ_array)))
+                noise = noise / np.linalg.norm(noise)
+                differ_noisy.x.array[:] = differ_array + noise_level*noise*eit_cont.bdrNorm(differ_noisy)
 
-            noise = np.random.uniform(-1, 1, size=(len(differ_array)))
-            noise = noise / np.linalg.norm(noise)
-            differ_noisy.x.array[:] = differ_array + noise_level*noise*eit_cont.bdrNorm(differ_noisy)
+                differ_list.append(differ_noisy)
 
-            differ_list.append(differ_noisy)
-
-        "Solve Forward Problem with Background and Difference of Potentials as Currents"
-        list_phi = dir_problem.solve_problem_current(differ_list, gamma0)
+            "Solve Forward Problem with Background and Difference of Potentials as Currents"
+            list_phi = dir_problem.solve_problem_current(differ_list, gamma0)
 
         list_delx_phi = []
         list_dely_phi = []
 
-
-        for k in range(n_currents):
-            
+        for k in range(n_currents):            
             gradphi_array = dir_problem.compute_gradient(list_phi[k])
 
             delx_phi.x.array[:] = gradphi_array[:,0]

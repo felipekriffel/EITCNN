@@ -8,6 +8,7 @@ import os
 import sys
 from eit_image import EIT_Image
 import logging
+import traceback
 
 logging.basicConfig(
     filename='experiments.log',
@@ -15,12 +16,19 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
+def main(OLD_PATH, NEW_PATH):
+    """
+    Takes existent dataset folder with computed cnn/fnn data and copy samples, only changing gamma
+    image type from binary (inclusion/not inclusion) to segmentation (high inclusion, low inclusion, bg)
+    """
 
-def main(SETTINGS_JSON):
-    settings = json.loads(SETTINGS_JSON)
-    
-    if not os.path.isdir(settings['dsm_datapath']):
-        os.mkdir(settings['dsm_datapath'])
+    with open(os.path.join(OLD_PATH, 'data_info.json')) as f:
+        settings = json.loads(f.read())
+
+    settings['img_type'] = 'seg'
+
+    if not os.path.isdir(NEW_PATH):
+        os.mkdir(NEW_PATH)
 
     with open(settings['dsm_datapath']+"/data_info.json","w") as f:
         f.write(json.dumps(settings))
@@ -88,6 +96,7 @@ def main(SETTINGS_JSON):
     samples_names = [file for file in os.listdir(samples_dir) if file.endswith(".npy")]
     
     nan_samples_path = os.path.join(samples_dir,"nan_samples.json")
+
     if os.path.exists(nan_samples_path):
         with open(nan_samples_path,'r') as f:
             saved_nan = json.loads(f.read())
@@ -96,72 +105,40 @@ def main(SETTINGS_JSON):
         nan_samples = []
 
     # Loop for generating data
-    noise_level = settings["noise_level"] # % of artificial noise in data
     for sample in samples_names:
-        sample_path = os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm_cnn.npy"))
-        if os.path.exists(sample_path) and sample_path not in nan_samples:
-            print(f"{sample} dsm data already computed, skipping")
-            continue
-        else:
-            print("Computing", sample)
-            
-        gamma.x.array[:]= np.load(os.path.join(samples_dir, sample))
-
-        "Define data in a homogeneus grid for training"
-        gamma_img = eit_image.genGammaImg(gamma,bg,ivhigh,ivlow,type='bin')
-
-        "Solve Forward Problem with Background + Inclusion"
-        list_u1 = dir_problem.solve_problem_current(current_list, gamma)
-
-        "Difference of Resulting Potentials"
-        differ_list = [dolfinx.fem.Function(V) for i in range(n_currents)]
-
-        differ_noisy = dolfinx.fem.Function(V)
-        for k in range(n_currents):
-
-            differ_array = list_u1[k].x.array - list_u0[k].x.array
-            differ_noisy.x.array[:] = differ_array
-
-            noise = np.random.uniform(-1, 1, size=(len(differ_array)))
-            noise = noise / np.linalg.norm(noise)
+        old_cnn_path = os.path.join(OLD_PATH,sample.replace(".npy","_dsm_cnn.npy"))
         
-            differ_list[k].x.array[:] = differ_array + noise_level*noise*eit_cont.bdrNorm(differ_noisy)
-
-        "Solve Forward Problem with Background and Difference of Potentials as Currents"
-        list_ur_dif = dir_problem.solve_problem_current(differ_list, gamma0)
+        gamma.x.array[:]= np.load(os.path.join(samples_dir, sample))
+        gamma_img = eit_image.genGammaImg(gamma,bg,ivhigh, ivlow, 'seg')
 
         "Saves data on tensor"
-        T = np.zeros((n_currents + 3,N,N))
-        for k in range(n_currents):
-            T[k] = eit_image.genPotentialImg(list_ur_dif[k])
+        T = np.load(old_cnn_path)
+        T[-1] = gamma_img
 
-        T[n_currents] = mesh_x
-        T[n_currents+1] = mesh_y
-        T[n_currents+2] = gamma_img
+        new_cnn_path = os.path.join(OLD_PATH,sample.replace(".npy","_dsm_cnn.npy"))
 
         if np.isnan(T).any():
             print(f"NAN at sample {sample}, skipping saving")
             nan_samples.append(sample)
         else:
-            np.save(sample_path,T)
+            np.save(new_cnn_path,T)
         
     # np.save('EIT_Data_for_CNN', T1)
     print(f'Data saved at {settings["dsm_datapath"]}.')
 
     if len(nan_samples)>0:
-        with open(os.path.join(settings['dsm_datapath'], "nan_samples.json"),'w') as f:
+        print("nan found at samples", nan_samples)
+        with open(os.path.join(NEW_PATH, "nan_samples.json"),'w') as f:
             f.write(json.dumps(nan_samples))
 
 if __name__=="__main__":
-    SETTINGS_JSON = sys.argv[1]
-    if SETTINGS_JSON.endswith('.json') and os.path.isfile(SETTINGS_JSON):
-        with open(SETTINGS_JSON) as f:
-            SETTINGS_JSON = f.read()
-
+    OLD_PATH = sys.argv[1]
+    NEW_PATH = sys.argv[2]
+    
     try:
-        main(SETTINGS_JSON)
+        main(OLD_PATH, NEW_PATH)
     except Exception as e:
-        logging.error(f"DSM-CNN data gen failed calling {sys.argv[1]} config file")
+        logging.error(f"bin-seg convertion failed calling {sys.argv[1]} config file")
         logging.error(traceback.format_exc)
-        print("DSM-CNN data gen failed calling {sys.argv[1]} config file")
+        print("bin-seg convertion failed calling {sys.argv[1]} config file")
         print(traceback.format_exc)

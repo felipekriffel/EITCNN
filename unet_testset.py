@@ -83,6 +83,7 @@ if __name__=='__main__':
     except Exception as e:    
         msg = f"Unet test-set routine failed calling paths {sys.argv[1]} {sys.argv[2]} \n"
         print(msg)
+        logging.error(msg)
         # print(e)
         print(traceback.format_exc())
         logging.error(traceback.format_exc())
