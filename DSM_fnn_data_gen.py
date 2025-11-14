@@ -98,6 +98,15 @@ def main(SETTINGS_JSON):
 
     # Loop for generating data
     noise_level = settings["noise_level"] # % of artificial noise in data
+
+    nan_samples_path = os.path.join(samples_dir,"nan_samples.json")
+    if os.path.exists(nan_samples_path):
+        with open(nan_samples_path,'r') as f:
+            saved_nan = json.loads(f.read())
+        nan_samples = saved_nan
+    else:
+        nan_samples = []
+
     for sample in samples_names:
 
         if os.path.exists(os.path.join(settings['dsm_datapath'],sample.replace(".npy",f"_dsm_fnn.npy"))):
@@ -163,8 +172,11 @@ def main(SETTINGS_JSON):
             for j in range(N):
                 if T[0,i,j]**2 + T[1,i,j]**2 < 1:    
                     vec_list.append(T[:,i,j])
-
-        np.save(os.path.join(settings['dsm_datapath'],sample.replace(".npy",f"_dsm_fnn")),vec_list)
+        if np.isnan(vec_list).any():
+            print(f"NAN at sample {sample}, skipping saving")
+            nan_samples.append(sample)
+        else:
+            np.save(os.path.join(settings['dsm_datapath'],sample.replace(".npy",f"_dsm_fnn")),vec_list)
 
     print(f'Data saved at {settings["dsm_datapath"]}.')
 
