@@ -5,6 +5,7 @@ import sys
 import math
 import json
 import logging
+import traceback
 
 logging.basicConfig(
     filename='experiments.log',
@@ -106,5 +107,7 @@ if __name__=='__main__':
   try:
     main(SETTINGS_JSON)
   except Exception as e:
-    logging.error(f"DSM fnn datagen failed calling {sys.argv[1]} config file")
-    logging.error(e)
+    logging.error(f"CNN tfrecord gen failed calling {sys.argv[1]} config file")
+    logging.error(traceback.format_exc())
+    print(f"CNN tfrecord gen failed calling {sys.argv[1]} config file")
+    print(traceback.format_exc())

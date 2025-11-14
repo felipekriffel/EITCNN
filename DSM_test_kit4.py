@@ -6,6 +6,7 @@ import json
 import sys
 from eit_image import EIT_Image
 import logging
+import traceback
 
 logging.basicConfig(
     filename='experiments.log',
@@ -200,4 +201,5 @@ if __name__=='__main__':
     main(RESULTS_PATH)
   except Exception as e:
     logging.error(f"DSM fnn datagen failed calling {sys.argv[1]} config file")
-    logging.error(e)
+    logging.error(traceback.format_exc())
+    print(traceback.format_exc())

@@ -9,6 +9,7 @@ import sys
 from eit_image import EIT_Image
 from matplotlib import pyplot as plt
 import logging
+import traceback
 
 logging.basicConfig(
     filename='experiments.log',
@@ -106,6 +107,8 @@ def main(SETTINGS_JSON):
   else:
     nan_samples = []
     
+  if not hasattr(settings,'type'):
+    img_type = 'bin'
 
   # Loop for generating data
   noise_level = settings["noise_level"] # % of artificial noise in data
@@ -121,7 +124,7 @@ def main(SETTINGS_JSON):
     gamma.x.array[:]= np.load(os.path.join(samples_dir, sample))
 
     "Define data in a homogeneus grid for training"
-    A = eit_img.genGammaImg(gamma,bg,ivhigh,ivlow,settings['img_type'])
+    A = eit_img.genGammaImg(gamma,bg,ivhigh,ivlow,img_type)
 
     "Solve Forward Problem with Background + Inclusion"
     list_u1, list_U1_m = dir_problem.solve_problem_current(I_all, gamma)
@@ -167,5 +170,6 @@ if __name__=="__main__":
   try:
     main(SETTINGS_JSON)
   except Exception as e:
-    logging.error(f"DSM fnn datagen failed calling {sys.argv[1]} config file")
-    logging.error(e)
+    logging.error(f"DSM cnn datagen failed calling {sys.argv[1]} config file")
+    logging.error(traceback.format_exc())
+    print(traceback.format_exc())

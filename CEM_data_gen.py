@@ -6,6 +6,7 @@ import json
 import os
 import sys
 import logging
+import traceback
 
 logging.basicConfig(
     filename='experiments.log',
@@ -148,4 +149,5 @@ if __name__=="__main__":
         main(SETTINGS_JSON)
     except Exception as e:
         logging.error(f"DSM fnn datagen failed calling {sys.argv[1]} config file")
-        logging.error(e)
+        logging.error(traceback.format_exc())
+        print(traceback.format_exc())

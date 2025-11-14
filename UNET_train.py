@@ -6,7 +6,7 @@ import os
 import sys
 import tensorflow as tf
 from unet import *
-
+import traceback
 import logging
 
 logging.basicConfig(
@@ -167,5 +167,6 @@ if __name__=="__main__":
     try:
         main(SETTINGS_JSON)
     except Exception as e:
-        logging.error(f"DSM fnn datagen failed calling {sys.argv[1]} config file")
-        logging.error(e)
+        logging.error(f"Unet train failed calling {sys.argv[1]} config file")
+        logging.error(traceback.format_exc())
+        print(traceback.format_exc())

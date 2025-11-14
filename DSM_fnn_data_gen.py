@@ -9,6 +9,7 @@ import sys
 from eit_image import EIT_Image
 from matplotlib import pyplot as plt
 import logging
+import traceback
 
 logging.basicConfig(
     filename='experiments.log',
@@ -194,7 +195,7 @@ if __name__=="__main__":
   try:
     main(SETTINGS_JSON)
   except Exception as e:
-    logging.error(f"DSM fnn datagen failed calling {sys.argv[1]} config file")
-    logging.error(e)
+    print(traceback.format_exc())
     print(f"DSM fnn datagen failed calling {sys.argv[1]} config file")
-    print(e)
+    logging.error(f"DSM fnn datagen failed calling {sys.argv[1]} config file")
+    logging.error(traceback.format_exc())
