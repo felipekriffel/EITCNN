@@ -144,9 +144,9 @@ def main(SETTINGS_JSON):
 
             "Difference of Resulting Potentials"
             differ_list = []
-            differ_noisy = dolfinx.fem.Function(V)
             for k in range(n_currents):
-                
+                differ_noisy = dolfinx.fem.Function(V)
+
                 differ_array = list_u1[k].x.array - list_u0[k].x.array
                 differ_noisy.x.array[:] = differ_array
 

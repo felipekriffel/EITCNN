@@ -58,8 +58,14 @@ def main(SETTINGS_JSON):
     gamma0 = dolfinx.fem.Function(V0)
     gamma0.x.array[:] = bg
 
-    current_list = dir_problem.get_current_list(settings["n_currents"])
-    
+    current_index = settings['currents']
+    max_current_index = max(current_index)+1
+
+    print("Current index", current_index)
+    print("n currents", max_current_index)
+
+    current_list = dir_problem.get_current_list(max_current_index)
+    current_list = [current_list[i] for i in current_index]
     n_currents = len(current_list)
 
     #Solving Forward Problem
