@@ -72,8 +72,6 @@ def main(SETTINGS_JSON):
     ivhigh,ivlow = settings['ivhigh'], settings['ivlow']
     gamma0 = dolfinx.fem.Function(V0)
     gamma0.x.array[:] = bg
-    if 'img_type' not in settings:
-        img_type = 'bin'
 
     #Solving Forward Problem
     list_u, list_U0_m = dir_problem.solve_problem_current(I_all, gamma0)
@@ -112,88 +110,47 @@ def main(SETTINGS_JSON):
         nan_samples = saved_nan
     else:
         nan_samples = []
-    
-    if 'phi_datapath' in settings:
-        phidir_path = settings['phi_datapath']
-        phi_files_list = [file for file in os.listdir(phidir_path) if file.endswith("_dsm_phi.npy")]
-    else:
-        phi_files_list = []
+        
 
     # Loop for generating data
     noise_level = settings["noise_level"] # % of artificial noise in data
     for sample in samples_names:
-        sample_path = os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm_fnn.npy"))
+        sample_path = os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm_phi.npy"))
         if os.path.exists(sample_path) and sample_path not in nan_samples:
             print(f"{sample} dsm data already computed, skipping")
             continue
         else:
             print("Computing", sample)
             
+        
         gamma.x.array[:]= np.load(os.path.join(samples_dir, sample))
 
         "Define data in a homogeneus grid for training"
-        gamma_img = eit_img.genGammaImg(gamma,bg,ivhigh,ivlow,img_type)
+        gamma_img = eit_img.genGammaImg(gamma,bg,ivhigh,ivlow,settings['img_type'])
 
+        "Solve Forward Problem with Background + Inclusion"
+        list_u1, list_U1_m = dir_problem.solve_problem_current(I_all, gamma)
 
-        "Checks if there is phi data computed, or then compute it else"        
-        if sample.replace(".npy","_dsm_phi.npy") in phi_files_list:
-            phi_path = os.path.join(phidir_path,sample.replace(".npy","_dsm_phi.npy"))
+        "Difference of Resulting Potentials"
+        differ = np.array(list_U1_m) - np.array(list_U0_m)
+        noise = np.random.uniform(-1, 1, size=(len(differ),len(differ[0])))
+        noise = noise / np.linalg.norm(noise)
+        differ_noisy = differ + noise_level*noise*np.linalg.norm(differ)
 
-            phi_array = np.load(phi_path)
-            list_phi = []
-            for i in range(l):
-                list_phi.append(dolfinx.fem.Function(V))
-                list_phi[-1].x.array[:] = phi_array[i]
-        
-        else:
-            "Solve Forward Problem with Background + Inclusion"
-            list_u1, list_U1_m = dir_problem.solve_problem_current(I_all, gamma)
+        "Solve Forward Problem with Background and Difference of Potentials as Currents"
 
-            "Difference of Resulting Potentials"
-            differ = np.array(list_U1_m) - np.array(list_U0_m)
-            noise = np.random.uniform(-1, 1, size=(len(differ),len(differ[0])))
-            noise = noise / np.linalg.norm(noise)
-            differ_noisy = differ + noise_level*noise*np.linalg.norm(differ)
+        list_ur_dif, list_U_dif = dir_problem.solve_problem_current(differ_noisy, gamma0)
 
-            "Solve Forward Problem with Background and Difference of Potentials as Currents"
-            list_phi, list_Phi = dir_problem.solve_problem_current(differ_noisy, gamma0)
+        "Saves data on tensor"
+        save_mat = np.array([
+            u.x.array for u in list_ur_dif
+        ])
 
-        # Compute gradients 
-        list_delx_phi = []
-        list_dely_phi = []
-
-        for k in range(l):
-            gradphi_array = eitx.compute_gradient(list_phi[k])
-
-            delx_phi.x.array[:] = gradphi_array[:,0]
-            dely_phi.x.array[:] = gradphi_array[:,1]
-
-            delx_img = eit_img.genPotentialImg(delx_phi)
-            dely_img = eit_img.genPotentialImg(dely_phi)
-
-            list_delx_phi.append(delx_img)
-            list_dely_phi.append(dely_img)
-
-        T = np.zeros((2*l + 3,N,N))
-        T[0] = mesh_x
-        T[1] = mesh_y
-        for k in range(l):
-            T[2+2*k] = list_delx_phi[k]
-            T[2+2*k+1] = list_dely_phi[k]        
-        T[-1] = gamma_img
-
-        vec_list = []
-        for i in range(N):
-            for j in range(N):
-                if T[0,i,j]**2 + T[1,i,j]**2 < 1:    
-                    vec_list.append(T[:,i,j])
-
-        if np.isnan(vec_list).any():
+        if np.isnan(save_mat).any():
             print(f"NAN at sample {sample}, skipping saving")
-            if sample not in nan_samples:
-                nan_samples.append(sample)
+            nan_samples.append(sample)
         else:
-            np.save(os.path.join(settings['dsm_datapath'],sample.replace(".npy","_dsm_fnn")),vec_list)
+            np.save(sample_path,save_mat)
         
     # np.save('EIT_Data_for_CNN', T1)
     print(f'Data saved at {settings["dsm_datapath"]}.')
