@@ -129,9 +129,6 @@ def main(SETTINGS_JSON):
         
         gamma.x.array[:]= np.load(os.path.join(samples_dir, sample))
 
-        "Define data in a homogeneus grid for training"
-        gamma_img = eit_img.genGammaImg(gamma,bg,ivhigh,ivlow,img_type)
-
         "Solve Forward Problem with Background + Inclusion"
         list_u1, list_U1_m = dir_problem.solve_problem_current(I_all, gamma)
 

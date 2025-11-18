@@ -74,6 +74,8 @@ def main(SETTINGS_JSON):
     gamma0.x.array[:] = bg
     if 'img_type' not in settings:
         img_type = 'bin'
+    else:
+        img_type = settings['img_type']
 
     #Solving Forward Problem
     list_u, list_U0_m = dir_problem.solve_problem_current(I_all, gamma0)

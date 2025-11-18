@@ -59,7 +59,7 @@ def main(TEST_PATH, RESULTS_PATH):
             ])
         )
 
-    sample_pred_path = os.path.join(PRED_PATH, f"TEST_{settings['n_currents']}_DELTA_{100*settings['noise_level']}")
+    sample_pred_path = os.path.join(PRED_PATH, f"TEST_{len(settings['currents'])}_DELTA_{100*settings['noise_level']}")
     np.save(sample_pred_path, pred_list)
 
     print("Data saved at", sample_pred_path)    
