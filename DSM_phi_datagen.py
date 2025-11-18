@@ -73,6 +73,10 @@ def main(SETTINGS_JSON):
     gamma0 = dolfinx.fem.Function(V0)
     gamma0.x.array[:] = bg
 
+    if 'img_type' not in settings:
+        img_type = 'bin'
+
+
     #Solving Forward Problem
     list_u, list_U0_m = dir_problem.solve_problem_current(I_all, gamma0)
     list_U0 = np.array(list_U0_m).flatten()
