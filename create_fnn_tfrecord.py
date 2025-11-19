@@ -65,7 +65,7 @@ def main(SETTINGS_JSON):
         sample_mat = np.concatenate([np.load(file) for file in batch_files])
         np.random.shuffle(sample_mat)
 
-        print("Loading samples", batch_files)
+        print("Loading batch", j)
         print(sample_mat.shape)
         
         if np.isnan(sample_mat).any():

@@ -95,8 +95,8 @@ def main(RESULTS_PATH):
     gamma = dolfinx.fem.Function(V0)      # Empty function
     input_list = []                               # To save data
 
-    cond_dir = [file for file in os.listdir(test_path) if file.endswith(".npy")]
-
+    cond_dir = [file for file in os.listdir(test_path) if file.startswith("sample_") and file.endswith(".npy")]
+    
     gammaimg_list = []
 
     for sample in cond_dir:

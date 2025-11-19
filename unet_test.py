@@ -65,12 +65,12 @@ def main(RESULTS_PATH):
     current_index = settings['currents']
     max_current_index = max(current_index)+1
 
-    print("Current index", current_index)
-    print("n currents", max_current_index)
-
     current_list = dir_problem.get_current_list(max_current_index)
     current_list = [current_list[i] for i in current_index]
     n_currents = len(current_list)
+
+    print("Current index", current_index)
+    print("n currents", max_current_index)
 
     #Solving Forward Problem
     list_u0 = dir_problem.solve_problem_current(current_list, gamma0)
@@ -95,7 +95,7 @@ def main(RESULTS_PATH):
 
     eit_img = EIT_Image(dir_problem.mesh,mesh_x,mesh_y)
 
-    cond_dir = [file for file in os.listdir(test_path) if file.endswith(".npy")]
+    cond_dir = [file for file in os.listdir(test_path) if file.startswith("sample_") and file.endswith(".npy")]
 
     T1 = []
 
