@@ -93,19 +93,24 @@ def main(SETTINGS_JSON):
 
     # Unet - Encoder block
     # Build U-net architeture
-    
-    # Call the helper function for defining the layers for the model, given the input image size
-    fnn_model = FNN_Compiled(input_size=(2*n_g +2,), n_blocks=2, n_neurons=100,dropout=settings['dropout_prob'])
+
+    if 'train_checkpoint' in settings:
+        CHECKPOINT_PATH = settings['train_checkpoint']
+        print('\nLoading checkpoint at ',CHECKPOINT_PATH,'\n')
+        fnn_model = tf.keras.models.load_model(os.path.join(CHECKPOINT_PATH,'fnn.keras'))
+    else:
+        # Call the helper function for defining the layers for the model, given the input image size
+        fnn_model = FNN_Compiled(input_size=(2*n_g +2,), n_blocks=2, n_neurons=100,dropout=settings['dropout_prob'])
+        fnn_model.compile(optimizer=tf.keras.optimizers.Adam(
+        ),
+            #loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            loss='MeanSquaredError'
+            #metrics=['accuracy']
+        )    
     # Check the summary to better interpret how the output dimensions change in each layer
     fnn_model.summary()
 
     'Run model'
-    fnn_model.compile(optimizer=tf.keras.optimizers.Adam(
-    ),
-        #loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        loss='MeanSquaredError'
-        #metrics=['accuracy']
-    )
 
     # Setup for checkpoints
     checkpoint = tf.keras.callbacks.ModelCheckpoint(
@@ -113,7 +118,7 @@ def main(SETTINGS_JSON):
         save_weights_only=False,
         save_best_only=False,
         save_freq = (n_samples//settings["batch_size"])*settings['save_period']
-        )
+    )
 
     print("Save Freq",(n_samples//settings["batch_size"])*settings['save_period'])
 
@@ -138,6 +143,8 @@ def main(SETTINGS_JSON):
 
     epochs   = range(len(loss)) # Get number of epochs
 
+    np.save(os.path.join(SAVEPATH,'loss'),loss)
+    np.save(os.path.join(SAVEPATH,'val'),val_loss)
     fnn_model.save('EIT_model/fnn.keras')
     fnn_model.save(os.path.join(SAVEPATH,'fnn.keras'))
 

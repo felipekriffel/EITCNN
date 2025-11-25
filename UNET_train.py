@@ -98,18 +98,23 @@ def main(SETTINGS_JSON):
     'Unet - Encoder block'
     'Build U-net architeture'
     # Call the helper function for defining the layers for the model, given the input image size
-    unet_model = UNetCompiled(input_size=(128,128,n_g + 2), n_filters=32, n_classes=1,dropout=settings['dropout_prob'])
+    if 'train_checkpoint' in settings:
+        CHECKPOINT_PATH = settings['train_checkpoint']
+        print('\nLoading checkpoint at ',CHECKPOINT_PATH,'\n')
+        unet_model = tf.keras.models.load_model(os.path.join(CHECKPOINT_PATH,'unet.keras'))
+    else:
+        # Call the helper function for defining the layers for the model, given the input image size
+        unet_model = UNetCompiled(input_size=(128,128,n_g + 2), n_filters=32, n_classes=1,dropout=settings['dropout_prob'])
+        unet_model.compile(optimizer=tf.keras.optimizers.Adam(
+        ),
+            #loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            loss='MeanSquaredError'
+            #metrics=['accuracy']
+        )    
     # Check the summary to better interpret how the output dimensions change in each layer
     unet_model.summary()
 
     'Run model'
-    unet_model.compile(optimizer=tf.keras.optimizers.Adam(
-    ),
-        #loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        loss='MeanSquaredError'
-        #metrics=['accuracy']
-    )
-
     # Setup for checkpoints
     checkpoint = tf.keras.callbacks.ModelCheckpoint(
         filepath="EIT_model/checkpoints/{epoch:02d}.keras",
@@ -141,6 +146,8 @@ def main(SETTINGS_JSON):
 
     epochs   = range(len(loss)) # Get number of epochs
 
+    np.save(os.path.join(SAVEPATH,'loss'),loss)
+    np.save(os.path.join(SAVEPATH,'val'),val_loss)
     unet_model.save('EIT_model/unet.keras')
     unet_model.save(os.path.join(SAVEPATH,'unet.keras'))
 
