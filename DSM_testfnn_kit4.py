@@ -158,8 +158,8 @@ def main(RESULTS_PATH):
         list_dely_phi.append(dely_img)
 
     T = np.zeros((2*l + 2,N,N))
-    T[0] = mesh_x
-    T[1] = mesh_y
+    T[1] = mesh_x
+    T[0] = mesh_y
     for k in range(l):
         T[2+2*k] = list_delx_phi[k]
         T[2+2*k+1] = list_dely_phi[k]        
@@ -201,7 +201,7 @@ def main(RESULTS_PATH):
 
   result = 0.5*np.ones((n_exper,N,N))
   for k in range(n_exper):
-    result1 = rotate(classes[k],180)
+    result1 = classes[k]
     for i in range(N):
       for j in range(N):
         if x[i]**2 + y[j]**2 > radius**2:
@@ -220,7 +220,7 @@ def main(RESULTS_PATH):
   fig, ax = plt.subplots(result.shape[0],2,figsize=(10,40))
   img_array = []
   for k in range(result.shape[0]):
-    img_array.append(ax[k][0].imshow(result[k], interpolation='none',vmin=-1.0,vmax=1.0))
+    img_array.append(ax[k][0].imshow(result[k], interpolation='none',vmin=np.min([np.min(result[k]),0.0]),vmax=1.0))
     ax[k][0].set_axis_off()
     ax[k][1].imshow(photo_array[k])
     ax[k][1].set_axis_off()

@@ -6,7 +6,7 @@ import sys
 import tensorflow as tf
 from fnn import *
 import logging
-import traceback
+import traceback 
 
 logging.basicConfig(
     filename='experiments.log',
@@ -77,11 +77,13 @@ def main(SETTINGS_JSON):
     n_samples = data_info['n_samples']
     n_train = data_info['n_train']
     n_val = data_info['n_val']
+
     if settings['steps_per_epoch'] == "full":
         steps_per_epoch = n_train // settings['batch_size']
     else:
         steps_per_epoch = settings['steps_per_epoch']
-    
+
+
     print("Number of currents:",n_g)
     print("Number of samples:", n_samples)
     print('Number of samples for training: ' + str(n_train))
@@ -93,19 +95,23 @@ def main(SETTINGS_JSON):
 
     # Unet - Encoder block
     # Build U-net architeture
-    
-    # Call the helper function for defining the layers for the model, given the input image size
-    fnn_model = FNN_Compiled(input_size=(2*n_g +2,), n_blocks=2, n_neurons=100,dropout=settings['dropout_prob'])
+
+    if 'train_checkpoint' in settings:
+        CHECKPOINT_PATH = settings['train_checkpoint']
+        print('\nLoading checkpoint at ',CHECKPOINT_PATH,'\n')
+        fnn_model = tf.keras.models.load_model(os.path.join(CHECKPOINT_PATH,'fnn.keras'))
+    else:
+        # Call the helper function for defining the layers for the model, given the input image size
+        fnn_model = FNN_Compiled(input_size=(2*n_g +2,), n_blocks=2, n_neurons=100,dropout=settings['dropout_prob'])
+        fnn_model.compile(optimizer=tf.keras.optimizers.Adam(),
+            #loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            loss='MeanSquaredError'
+            #metrics=['accuracy']
+        )    
     # Check the summary to better interpret how the output dimensions change in each layer
     fnn_model.summary()
 
     'Run model'
-    fnn_model.compile(optimizer=tf.keras.optimizers.Adam(
-    ),
-        #loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        loss='MeanSquaredError'
-        #metrics=['accuracy']
-    )
 
     # Setup for checkpoints
     checkpoint = tf.keras.callbacks.ModelCheckpoint(
@@ -113,7 +119,7 @@ def main(SETTINGS_JSON):
         save_weights_only=False,
         save_best_only=False,
         save_freq = (n_samples//settings["batch_size"])*settings['save_period']
-        )
+    )
 
     print("Save Freq",(n_samples//settings["batch_size"])*settings['save_period'])
 
@@ -138,6 +144,8 @@ def main(SETTINGS_JSON):
 
     epochs   = range(len(loss)) # Get number of epochs
 
+    np.save(os.path.join(SAVEPATH,'loss'),loss)
+    np.save(os.path.join(SAVEPATH,'val'),val_loss)
     fnn_model.save('EIT_model/fnn.keras')
     fnn_model.save(os.path.join(SAVEPATH,'fnn.keras'))
 
@@ -153,7 +161,6 @@ def main(SETTINGS_JSON):
     plt.savefig("fnn_training_graph.png")
 
 if __name__=="__main__":
-#   SETTINGS_JSON = 'unet_train_settings.json'
     SETTINGS_JSON = sys.argv[1]
     if SETTINGS_JSON.endswith('.json') and os.path.isfile(SETTINGS_JSON):
         with open(SETTINGS_JSON) as f:
@@ -162,5 +169,5 @@ if __name__=="__main__":
         main(SETTINGS_JSON)
     except Exception as e:
         logging.error(f"Fnn train failed calling {sys.argv[1]} config file")
-        logging.error(traceback.format_exc())
         print(traceback.format_exc())
+        logging.error(traceback.format_exc())
