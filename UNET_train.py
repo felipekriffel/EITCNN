@@ -146,6 +146,13 @@ def main(SETTINGS_JSON):
 
     epochs   = range(len(loss)) # Get number of epochs
 
+    if 'train_checkpoint' in settings and os.path.exists(os.path.join(SAVEPATH,'loss.npy')) and os.path.exists(os.path.join(os.path.join(SAVEPATH,'val.npy'))):
+        saved_loss = np.load(os.path.join(SAVEPATH,'loss.npy'))
+        saved_val = np.load(os.path.join(SAVEPATH,'val.npy'))
+
+        loss = np.concatenate([saved_loss, loss])
+        val_loss = np.concatenate([saved_val, val_loss])
+
     np.save(os.path.join(SAVEPATH,'loss'),loss)
     np.save(os.path.join(SAVEPATH,'val'),val_loss)
     unet_model.save('EIT_model/unet.keras')
@@ -155,8 +162,8 @@ def main(SETTINGS_JSON):
     # Plot training and validation loss per epoch
     #------------------------------------------------
     plt.figure(figsize=(10, 10))
-    plt.plot(epochs, loss, 'r', label='Training Loss')
-    plt.plot(epochs, val_loss, 'b', label='Validation Loss')
+    plt.plot(loss, 'r', label='Training Loss')
+    plt.plot(val_loss, 'b', label='Validation Loss')
     plt.title ('Training and validation loss'   )
     plt.legend()
     plt.savefig(os.path.join(SAVEPATH,"training_graph.png"))
