@@ -1,7 +1,6 @@
 import os
 import json 
 import sys
-from eit_image import EIT_Image
 from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
