@@ -42,7 +42,7 @@ class EIT_Image():
         self.circle_points_index = circle_points_index 
         self.cells = cells
 
-    def genGammaImg(self,gamma:dolfinx.fem.Function,bg:float,ivhigh:float,ivlow:float,type="bin")->np.array:
+    def genGammaImg(self,gamma:dolfinx.fem.Function,bg:float=None,ivhigh:float=None,ivlow:float=None,type="bin")->np.array:
         """
         Compute gamma in given square/rectangular mesh of points.
 
@@ -55,6 +55,7 @@ class EIT_Image():
 
             - `bin`: simple indicator, 0 if background, 1 if inclusion;
             - `seg`: segmentation, 0 for bg, 1 for conductive inclusion, -1 for resistive inclusion.
+            - `raw`: raw values of gamma
         """
         # points_array = np.array(points_on_proc, dtype=np.float64)
 
@@ -72,6 +73,8 @@ class EIT_Image():
             gamma_ivlow = np.where(np.isclose(gamma_matrix,ivlow),-1,0)
         
             img_matrix = gamma_bg + gamma_ivhigh + gamma_ivlow
+        elif type=="raw":
+             img_matrix = gamma_matrix
         else:
             raise Exception("Invalid type, options are 'bin' or 'seg")
         
