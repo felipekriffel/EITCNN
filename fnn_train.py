@@ -77,13 +77,11 @@ def main(SETTINGS_JSON):
     n_samples = data_info['n_samples']
     n_train = data_info['n_train']
     n_val = data_info['n_val']
-
     if settings['steps_per_epoch'] == "full":
         steps_per_epoch = n_train // settings['batch_size']
     else:
         steps_per_epoch = settings['steps_per_epoch']
-
-
+    
     print("Number of currents:",n_g)
     print("Number of samples:", n_samples)
     print('Number of samples for training: ' + str(n_train))
@@ -103,9 +101,10 @@ def main(SETTINGS_JSON):
     else:
         # Call the helper function for defining the layers for the model, given the input image size
         fnn_model = FNN_Compiled(input_size=(2*n_g +2,), n_blocks=2, n_neurons=100,dropout=settings['dropout_prob'])
-        fnn_model.compile(optimizer=tf.keras.optimizers.Adam(),
-            #loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            loss='MeanSquaredError'
+        fnn_model.compile(optimizer=tf.keras.optimizers.Adam(
+        ),
+            loss=tf.keras.losses.BinaryCrossentropy(from_logits=False),
+            # loss='MeanSquaredError'
             #metrics=['accuracy']
         )    
     # Check the summary to better interpret how the output dimensions change in each layer
@@ -143,6 +142,13 @@ def main(SETTINGS_JSON):
     val_loss = results.history['val_loss' ]
 
     epochs   = range(len(loss)) # Get number of epochs
+    
+    if 'train_checkpoint' in settings and os.path.exists(os.path.join(SAVEPATH,'loss.npy')) and os.path.exists(os.path.join(os.path.join(SAVEPATH,'val.npy'))):
+        saved_loss = np.load(os.path.join(SAVEPATH,'loss.npy'))
+        saved_val = np.load(os.path.join(SAVEPATH,'val.npy'))
+
+        loss = np.concatenate([saved_loss, loss])
+        val_loss = np.concatenate([saved_val, val_loss])
 
     np.save(os.path.join(SAVEPATH,'loss'),loss)
     np.save(os.path.join(SAVEPATH,'val'),val_loss)
@@ -153,8 +159,8 @@ def main(SETTINGS_JSON):
     # Plot training and validation loss per epoch
     #------------------------------------------------
     plt.figure(figsize=(10, 10))
-    plt.plot(epochs, loss, 'r', label='Training Loss')
-    plt.plot(epochs, val_loss, 'b', label='Validation Loss')
+    plt.plot(loss, 'r', label='Training Loss')
+    plt.plot(val_loss, 'b', label='Validation Loss')
     plt.title ('Training and validation loss'   )
     plt.legend()
     plt.savefig(os.path.join(SAVEPATH,"training_graph.png"))

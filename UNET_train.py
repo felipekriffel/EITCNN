@@ -1,4 +1,3 @@
-import math
 import matplotlib.pyplot as plt
 import numpy as np
 import json
@@ -6,7 +5,6 @@ import os
 import sys
 import tensorflow as tf
 from unet import *
-import traceback
 import logging
 
 logging.basicConfig(
@@ -42,9 +40,9 @@ def _parse_image_tensor(image_features):
 
 
 def create_sample_dataset(record_file,batch_size,epochs):
-    raw_image_dataset = tf.data.TFRecordDataset(record_file,num_parallel_reads=tf.data.AUTOTUNE)
-    parsed_image_dataset = raw_image_dataset.map(_parse_image_function,num_parallel_calls=tf.data.AUTOTUNE)
-    parsed_image_dataset = parsed_image_dataset.map(_parse_image_tensor,num_parallel_calls=tf.data.AUTOTUNE)
+    raw_image_dataset = tf.data.TFRecordDataset(record_file)
+    parsed_image_dataset = raw_image_dataset.map(_parse_image_function)
+    parsed_image_dataset = parsed_image_dataset.map(_parse_image_tensor)
     parsed_image_dataset = parsed_image_dataset.repeat(epochs).batch(batch_size)
     return parsed_image_dataset.prefetch(tf.data.AUTOTUNE)
 
@@ -100,18 +98,23 @@ def main(SETTINGS_JSON):
     'Unet - Encoder block'
     'Build U-net architeture'
     # Call the helper function for defining the layers for the model, given the input image size
-    unet_model = UNetCompiled(input_size=(128,128,n_g + 2), n_filters=32, n_classes=1,dropout=settings['dropout_prob'])
+    if 'train_checkpoint' in settings:
+        CHECKPOINT_PATH = settings['train_checkpoint']
+        print('\nLoading checkpoint at ',CHECKPOINT_PATH,'\n')
+        unet_model = tf.keras.models.load_model(os.path.join(CHECKPOINT_PATH,'unet.keras'))
+    else:
+        # Call the helper function for defining the layers for the model, given the input image size
+        unet_model = UNetCompiled(input_size=(128,128,n_g + 2), n_filters=32, n_classes=1,dropout=settings['dropout_prob'])
+        unet_model.compile(optimizer=tf.keras.optimizers.Adam(
+        ),
+            #loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            loss='MeanSquaredError'
+            #metrics=['accuracy']
+        )    
     # Check the summary to better interpret how the output dimensions change in each layer
     unet_model.summary()
 
     'Run model'
-    unet_model.compile(optimizer=tf.keras.optimizers.Adam(
-    ),
-        #loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        loss='MeanSquaredError'
-        #metrics=['accuracy']
-    )
-
     # Setup for checkpoints
     checkpoint = tf.keras.callbacks.ModelCheckpoint(
         filepath="EIT_model/checkpoints/{epoch:02d}.keras",
@@ -143,6 +146,15 @@ def main(SETTINGS_JSON):
 
     epochs   = range(len(loss)) # Get number of epochs
 
+    if 'train_checkpoint' in settings and os.path.exists(os.path.join(SAVEPATH,'loss.npy')) and os.path.exists(os.path.join(os.path.join(SAVEPATH,'val.npy'))):
+        saved_loss = np.load(os.path.join(SAVEPATH,'loss.npy'))
+        saved_val = np.load(os.path.join(SAVEPATH,'val.npy'))
+
+        loss = np.concatenate([saved_loss, loss])
+        val_loss = np.concatenate([saved_val, val_loss])
+
+    np.save(os.path.join(SAVEPATH,'loss'),loss)
+    np.save(os.path.join(SAVEPATH,'val'),val_loss)
     unet_model.save('EIT_model/unet.keras')
     unet_model.save(os.path.join(SAVEPATH,'unet.keras'))
 
@@ -150,8 +162,8 @@ def main(SETTINGS_JSON):
     # Plot training and validation loss per epoch
     #------------------------------------------------
     plt.figure(figsize=(10, 10))
-    plt.plot(epochs, loss, 'r', label='Training Loss')
-    plt.plot(epochs, val_loss, 'b', label='Validation Loss')
+    plt.plot(loss, 'r', label='Training Loss')
+    plt.plot(val_loss, 'b', label='Validation Loss')
     plt.title ('Training and validation loss'   )
     plt.legend()
     plt.savefig(os.path.join(SAVEPATH,"training_graph.png"))
@@ -168,5 +180,4 @@ if __name__=="__main__":
         main(SETTINGS_JSON)
     except Exception as e:
         logging.error(f"Unet train failed calling {sys.argv[1]} config file")
-        logging.error(traceback.format_exc())
-        print(traceback.format_exc())
+        logging.error(e)
