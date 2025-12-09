@@ -143,18 +143,18 @@ def main(SETTINGS_JSON):
             list_u1 = dir_problem.solve_problem_current(current_list, gamma)
 
             "Difference of Resulting Potentials"
-            differ_list = []
+            differ_list = [dolfinx.fem.Function(V) for i in range(n_currents)]
+            differ_noisy = dolfinx.fem.Function(V)
+            noise_fun = dolfinx.fem.Function(V)
             for k in range(n_currents):
-                differ_noisy = dolfinx.fem.Function(V)
-
                 differ_array = list_u1[k].x.array - list_u0[k].x.array
                 differ_noisy.x.array[:] = differ_array
 
                 noise = np.random.uniform(-1, 1, size=(len(differ_array)))
-                noise = noise / np.linalg.norm(noise)
-                differ_noisy.x.array[:] = differ_array + noise_level*noise*eit_cont.bdrNorm(differ_noisy)
-
-                differ_list.append(differ_noisy)
+                noise_fun.x.array[:] = noise
+                noise = noise / eit_cont.bdrNorm(noise_fun)
+            
+                differ_list[k].x.array[:] = differ_array + noise_level*noise*eit_cont.bdrNorm(differ_noisy)
 
             "Solve Forward Problem with Background and Difference of Potentials as Currents"
             list_phi = dir_problem.solve_problem_current(differ_list, gamma0)

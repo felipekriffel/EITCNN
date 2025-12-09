@@ -95,7 +95,8 @@ def main(RESULTS_PATH):
     gamma = dolfinx.fem.Function(V0)      # Empty function
     input_list = []                               # To save data
 
-    cond_dir = [file for file in os.listdir(test_path) if file.startswith("sample_") and file.endswith(".npy")]
+    cond_dir = [file for file in os.listdir(test_path) if file.startswith("sample_") and file.endswith(".npy") and not file.endswith("_img.npy")]
+    cond_dir.sort()
     
     gammaimg_list = []
 
@@ -167,6 +168,7 @@ def main(RESULTS_PATH):
     'Plot'
     fig, ax = plt.subplots(2,len(input_list),figsize=(40,10))
     img_array = []
+    pred_img_list = []
     for k in range(len(input_list)):
         print('testing')
         input_val = tf.convert_to_tensor(input_list[k])
@@ -175,6 +177,7 @@ def main(RESULTS_PATH):
         print("shape predict", vec_predit.shape)
 
         pred_img = eit_image.get_fnn_matrix(vec_predit.flatten())
+        pred_img_list.append(pred_img)
 
         img_array.append(ax[0][k].imshow(pred_img))
         ax[0][k].set_axis_off()
@@ -186,6 +189,7 @@ def main(RESULTS_PATH):
     fig.colorbar(img_array[-1],ax=ax[1,:],orientation='vertical')
     plt.savefig(os.path.join(RESULTS_PATH,'test_result.png'))
 
+    np.save(os.path.join(RESULTS_PATH,'test_result'), pred_img_list)
 if __name__=='__main__':
     RESULTS_PATH = sys.argv[1]
 

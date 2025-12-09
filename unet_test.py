@@ -67,7 +67,7 @@ def main(RESULTS_PATH):
 
     current_list = dir_problem.get_current_list(max_current_index)
     current_list = [current_list[i] for i in current_index]
-    n_currents = len(current_list)
+    n_currents = len(current_list) 
 
     print("Current index", current_index)
     print("n currents", max_current_index)
@@ -95,7 +95,8 @@ def main(RESULTS_PATH):
 
     eit_img = EIT_Image(dir_problem.mesh,mesh_x,mesh_y)
 
-    cond_dir = [file for file in os.listdir(test_path) if file.startswith("sample_") and file.endswith(".npy")]
+    cond_dir = [file for file in os.listdir(test_path) if file.startswith("sample_") and file.endswith(".npy") and not file.endswith("_img.npy")]
+    cond_dir.sort()
 
     T1 = []
 
@@ -149,6 +150,7 @@ def main(RESULTS_PATH):
     model = tf.keras.models.load_model(os.path.join(MODELPATH,'unet.keras'))
 
     classes = model.predict(input_val)
+    np.save(os.path.join(RESULTS_PATH,'test_result'), [pred[:,:,0].T for pred in classes])
     print(classes.shape)
     
     'Plot'
