@@ -4,6 +4,14 @@ import os
 import sys
 import math
 import json
+import logging
+import traceback
+
+logging.basicConfig(
+    filename='experiments.log',
+    level=logging.ERROR,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 def main(SETTINGS_JSON):
   # with open(SETTINGS_PATH) as f: 
@@ -28,17 +36,16 @@ def main(SETTINGS_JSON):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
   def image_example(sample_array):
-    admitivity = np.transpose(sample_array[-1])
-    sample_array = np.transpose(sample_array[:-1])
+    admitivity = sample_array[-1]
+    sample_array = sample_array[0]
     sample_shape = sample_array.shape
-    
+
     sample_array_raw = sample_array.tobytes()
     admitivity_raw = admitivity.tobytes()
 
     feature = {
         'height': _int64_feature(sample_shape[0]),
         'width': _int64_feature(sample_shape[1]),
-        'currents': _int64_feature(n_g),
         'sample_raw': _bytes_feature(sample_array_raw),
         'admitivity_raw': _bytes_feature(admitivity_raw),
     }
@@ -49,18 +56,22 @@ def main(SETTINGS_JSON):
     with tf.io.TFRecordWriter(record_file) as writer:
       for filename in paths:
         sample_array = np.load(filename)
+        if np.isnan(sample_array).any():
+          print(f"----- \n WARNING: NAN found at sample {filename}, skipping computation\n -----")
+          continue
         tf_example = image_example(sample_array)
         writer.write(tf_example.SerializeToString())
       writer.close()
 
-  feature_paths = [DATAPATH+'/'+x for x in os.listdir(DATAPATH) if x!="data_info.json"]
+  feature_paths = [os.path.join(DATAPATH,x) for x in os.listdir(DATAPATH) if x.endswith(".npy")]
 
   per = settings['split_percentage']
 
   n_samples = len(feature_paths)
   n_train = math.floor(n_samples*per)    # number samples for training
-  print('Number of samples for training: ' + str(n_train))
+  print('Number of samples for training: ', n_train)
   n_val = n_samples - n_train        # number of samples for validation
+  print('Number of samples for validation: ', n_val)
 
   # permute the lines
   perm = np.random.permutation(n_samples)
@@ -72,10 +83,11 @@ def main(SETTINGS_JSON):
   create_tfrecord(SAVEPATH+"/train.tfrecords",paths_division)
   create_tfrecord(SAVEPATH+"/validation.tfrecords",paths_division2)
 
-  data_info = {
+  data_info = { 
     "n_samples": n_samples,
     "n_train": n_train,
-    "n_val": n_val
+    "n_val": n_val,
+    "n_g": 16
   }
 
   with open(SAVEPATH+"/data_info.json",'w') as f:
@@ -88,5 +100,12 @@ if __name__=='__main__':
   if SETTINGS_JSON.endswith('.json') and os.path.isfile(SETTINGS_JSON):
     with open(SETTINGS_JSON) as f:
       SETTINGS_JSON = f.read()
+  try:
+    main(SETTINGS_JSON)
+  except Exception as e:
+    logging.error(f"Create tfrecord failed calling {sys.argv[1]} config file")
+    logging.error(e)
+    logging.error(traceback.format_exc())
 
-  main(SETTINGS_JSON)
+    print(e)
+    print(traceback.format_exc())

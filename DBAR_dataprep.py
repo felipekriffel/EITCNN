@@ -16,10 +16,22 @@ def main(settings):
         f.write(json.dumps(settings))
 
     for file in dbar_file_list:
-        
+        if os.path.exists(
+           os.path.join(IMG_DIRPATH, file.replace("_dbar.mat",".npy"))
+        ):
+          print(file, "already exists, skipping")
+          continue
+        else:
+           print("computing ", file)
+
         sol_img = np.load(os.path.join(SOL_DIRPATH,file.replace("_dbar.mat","_img.npy")))
 
-        dbar_img = sp.io.loadmat(os.path.join(MAT_DIRPATH,file))
+        try:
+          dbar_img = sp.io.loadmat(os.path.join(MAT_DIRPATH,file))
+        except Exception as e:
+           print("\n error in file",file)
+           print(e)
+           continue
 
         entry = np.array([dbar_img['dbar_img'],sol_img])
 

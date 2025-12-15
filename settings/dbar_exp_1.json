@@ -1,8 +1,8 @@
 {
-    "samples_dir":"DATASET/COND/EXP_1",
-    "dbar_input_datapath":"DATASET/DBAR_INPUT/EXP_1",
-    "dbar_mat_datapath":"DATASET/DBAR_MAT/EXP_1",
-    "dbar_img_datapath":"DATASET/DBAR_SAMPLES/EXP_1",
+    "samples_dir":"/home/felipe/EITCNN/DATASET/COND/EXP_1",
+    "dbar_input_datapath":"/home/felipe/EITCNN/DATASET/DBAR_INPUT/EXP_1",
+    "dbar_mat_datapath":"/home/felipe/EITCNN/DATASET/DBAR_MAT/EXP_1",
+    "dbar_img_datapath":"/mnt/c/Users/Felipe/Documents/EIT_DATA/DATASET/DBAR_SAMPLES/EXP_1",
     "currents": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,15],
     "bg": 1,
     "ivhigh": 10,
