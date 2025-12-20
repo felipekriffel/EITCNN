@@ -73,6 +73,18 @@ def main(SETTINGS_JSON):
     #Solving Forward Problem
     list_u0 = dir_problem.solve_problem_current(current_list, gamma0)
 
+    noise_level = settings["noise_level"] # % of artificial noise in data
+    noise_fun = dolfinx.fem.Function(V)
+    
+    for u0 in list_u0:
+        u0_array = u0.x.array
+        noise = np.random.normal(0, 1, size = u0_array.shape)
+
+        noise_fun.x.array[:] = noise    
+        noise = noise / eit_cont.bdrNorm(noise_fun)
+
+        u0.x.array[:] = u0_array + noise_level*noise*eit_cont.bdrNorm(u0)
+
     'Retangular Mesh'
     N = settings["N"]                     # grid with N*N points (works well with 0 < N < 400)
     h = 2*radius/(N-1)                    # step size
@@ -108,7 +120,6 @@ def main(SETTINGS_JSON):
         phi_files_list = []
 
     # Loop for generating data
-    noise_level = settings["noise_level"] # % of artificial noise in data
 
     nan_samples_path = os.path.join(samples_dir,"nan_samples.json")
     if os.path.exists(nan_samples_path):
@@ -142,19 +153,19 @@ def main(SETTINGS_JSON):
             "Solve Forward Problem with Background + Inclusion"
             list_u1 = dir_problem.solve_problem_current(current_list, gamma)
 
+            for u1 in list_u1:
+                u1_array = u1.x.array
+                noise = np.random.normal(0, 1, size = u1_array.shape)
+                noise_fun.x.array[:] = noise
+                
+                noise = noise / eit_cont.bdrNorm(noise_fun)
+                u1.x.array[:] = u1_array + noise_level*noise*eit_cont.bdrNorm(u1)
+
             "Difference of Resulting Potentials"
             differ_list = [dolfinx.fem.Function(V) for i in range(n_currents)]
-            differ_noisy = dolfinx.fem.Function(V)
-            noise_fun = dolfinx.fem.Function(V)
-            for k in range(n_currents):
-                differ_array = list_u1[k].x.array - list_u0[k].x.array
-                differ_noisy.x.array[:] = differ_array
-
-                noise = np.random.uniform(-1, 1, size=(len(differ_array)))
-                noise_fun.x.array[:] = noise
-                noise = noise / eit_cont.bdrNorm(noise_fun)
             
-                differ_list[k].x.array[:] = differ_array + noise_level*noise*eit_cont.bdrNorm(differ_noisy)
+            for k in range(n_currents):
+                differ_list[k].x.array[:] = list_u1[k].x.array - list_u0[k].x.array
 
             "Solve Forward Problem with Background and Difference of Potentials as Currents"
             list_phi = dir_problem.solve_problem_current(differ_list, gamma0)

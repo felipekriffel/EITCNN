@@ -37,6 +37,7 @@ def main(TEST_PATH, RESULTS_PATH):
     T1 = []
     gammaimg_list = []
     pred_list = []    
+    label_idx_list = []
 
     for sample in dsm_dir:
         #Load experimental data
@@ -61,8 +62,12 @@ def main(TEST_PATH, RESULTS_PATH):
             ])
         )
 
+        label_idx_list.append(sample)
+
     sample_pred_path = os.path.join(PRED_PATH, f"TEST_{settings['n_currents']}_DELTA_{100*settings['noise_level']}")
     np.save(sample_pred_path, pred_list)
+    idx_path = sample_pred_path + "_IDX"
+    np.save(idx_path,label_idx_list)
     # input_val = tf.convert_to_tensor(T1)
 
     # classes = model.predict(input_val)
