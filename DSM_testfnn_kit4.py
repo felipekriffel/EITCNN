@@ -205,7 +205,7 @@ def main(RESULTS_PATH):
     for i in range(N):
       for j in range(N):
         if x[i]**2 + y[j]**2 > radius**2:
-          result1[i][j] = 0.5
+          result1[i][j] = 0.0
     result[k] = result1
 
   'prepare target photo list'
@@ -227,6 +227,8 @@ def main(RESULTS_PATH):
 
   fig.colorbar(img_array[0],ax=ax,orientation='vertical')
   plt.savefig(os.path.join(RESULTS_PATH,'test_result.png'))
+  np.save(os.path.join(RESULTS_PATH,'test_result'),result)
+
 
 if __name__=='__main__':
   RESULTS_PATH = sys.argv[1]

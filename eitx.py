@@ -3,7 +3,7 @@ from mpi4py import MPI #import parallel communicator
 import numpy as np
 import ufl
 import dolfinx.fem.petsc
-from dolfinx.io import gmshio
+from dolfinx.io import gmsh as gmshio
 import gmsh
 import pyvista
 import scipy as sp
@@ -65,7 +65,7 @@ class Electrodes():
 class MeshClass:
   def __init__(self,electrodes, mesh_refining=1,bdr_refining=1):
     self.electrodes = electrodes
-    self.mesh, self.cell_markers, self.facet_markers = self.setup_mesh(mesh_refining,bdr_refining)
+    self.mesh = self.setup_mesh(mesh_refining,bdr_refining).mesh    
     self.ds = self.setup_integration_domain()
   
   def setup_mesh(self,mesh_refining=1,bdr_refining=1):

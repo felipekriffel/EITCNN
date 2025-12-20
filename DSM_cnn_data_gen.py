@@ -75,6 +75,14 @@ def main(SETTINGS_JSON):
 
   #Solving Forward Problem
   list_u, list_U0_m = dir_problem.solve_problem_current(I_all, gamma0)
+
+  list_U0_m_delta = []
+  for U0 in list_U0_m:
+      noise = np.random.normal(0,1,size = U0.shape)
+      noise = noise / np.linalg.norm(noise)
+      U0_noisy = U0 + noise_level*noise *np.linalg.norm(U0)
+      list_U0_m_delta.append(U0_noisy)
+
   list_U0 = np.array(list_U0_m).flatten()
 
   'Retangular Mesh'
@@ -129,14 +137,18 @@ def main(SETTINGS_JSON):
     "Solve Forward Problem with Background + Inclusion"
     list_u1, list_U1_m = dir_problem.solve_problem_current(I_all, gamma)
 
-    "Difference of Resulting Potentials"
-    differ = np.array(list_U1_m) - np.array(list_U0_m)
-    noise = np.random.uniform(-1, 1, size=(len(differ),len(differ[0])))
-    noise = noise / np.linalg.norm(noise)
-    differ_noisy = differ + noise_level*noise*np.linalg.norm(differ)
+    list_U1_m_delta = []
+    for U1 in list_U1_m:
+        noise = np.random.normal(0,1,size = U1.shape)
+        noise = noise / np.linalg.norm(noise)
+        U1_noisy = U1 + noise_level*noise *np.linalg.norm(U1)
+        list_U1_m_delta.append(U1_noisy)
 
+    "Difference of Resulting Potentials"
+    differ = np.array(list_U1_m_delta) - np.array(list_U0_m_delta)
+    
     "Solve Forward Problem with Background and Difference of Potentials as Currents"
-    list_ur_dif, list_U_dif = dir_problem.solve_problem_current(differ_noisy, gamma0)
+    list_ur_dif, list_U_dif = dir_problem.solve_problem_current(differ, gamma0)
 
     "Saves data on tensor"
     T = np.zeros((l + 3,N,N))
