@@ -1,11 +1,13 @@
 # CEM_CNN
 
-Testes de redes neurais na reconstrução de imagens de Tomografia por Impedância.
+Testes de redes neurais na reconstrução de imagens de Tomografia por Impedância, em particular do método Deep - DSM. Nesse processo, construímos redes neurais que recebem como entrada a solução de uma EDP auxiliar, retornando uma imagem com a segmentação das inclusões na condutividade procurada. Para mais detalhes:
+
+- Artigo original (GUO & JIANG, 2020): https://arxiv.org/abs/2009.08024
+- Minha dissertação de mestrado sobre o tema: https://pergamum.ufsc.br/acervo/398757
 
 ## Ramo `main`
 
 Arquivos para implementação dos testes com o método Deep-DSM.
-
 
 ### `CNN_routine.py`
 
@@ -25,11 +27,7 @@ Gera dados aleatórios de condutividade, salvando os vetores de coeficientes e a
 
 ### `DSM_data_gen`
 
-Gera dados com as diferenças de Cuachy para o método DSM, usando como base as condutividades previamente geradas.
-
-### `CNN_test_checkpoints`
-
-Usado para treinar a UNET
+Gera dados com as diferenças de Cauchy para o método DSM, usando como base as condutividades previamente geradas.
 
 ### `eitx.py`
 
