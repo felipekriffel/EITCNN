@@ -1,9 +1,17 @@
 # CEM_CNN
 
-Testes de redes neurais na reconstrução de imagens de Tomografia por Impedância, em particular do método Deep - DSM. Nesse processo, construímos redes neurais que recebem como entrada a solução de uma EDP auxiliar, retornando uma imagem com a segmentação das inclusões na condutividade procurada. Para mais detalhes:
+Testes de redes neurais na reconstrução de imagens de Tomografia por Impedância Eletrica (EIT), em particular do método Deep DSM (GUO & JIANG,2020). Nesse processo, construímos redes neurais que recebem como entrada a solução de uma EDP auxiliar, retornando uma imagem com a segmentação das inclusões na condutividade procurada. Para mais detalhes:
 
 - Artigo original (GUO & JIANG, 2020): https://arxiv.org/abs/2009.08024
 - Minha dissertação de mestrado sobre o tema: https://pergamum.ufsc.br/acervo/398757
+
+No momento, as variantes do projeto estão distribuídas nas seguintes branchs desse repositório:
+
+- `main`: Método Deep DSM no Modelo Completo de Eletrodos da EIT;
+- `dsm_cont`: Método Deep DSM no Modelo Continuo da EIT;
+- `dbar`: Método Deep D-Bar (veja https://arxiv.org/abs/1711.03180)
+- `approxinv`: Testes usando redes neurais com um passo de metodo iterativo (Descontinuado);
+- `ifsc`: Códigos para utilizar dados reais provenientes do projeto de pesquisa em parceria com o IFSC Florianópolis (https://fabiomargotti.paginas.ufsc.br/prototipo2/).
 
 ## Ramo `main`
 
